@@ -1,0 +1,37 @@
+version: '3.8'
+
+services:
+  db:
+    image: postgres:15-alpine
+    container_name: solarsync_db
+    restart: always
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgrespassword
+      POSTGRES_DB: solarsync
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  web:
+    build: .
+    container_name: solarsync_web
+    restart: always
+    ports:
+      - "8000:8000"
+    environment:
+      DATABASE_URL: postgresql+asyncpg://postgres:postgrespassword@db:5432/solarsync
+      SECRET_KEY: production-secure-secret-key-solarsync-nagpur
+      APP_NAME: SolarSync
+      BASE_URL: http://localhost:8000
+      DEBUG: "false"
+      UPLOAD_DIR: uploads
+    volumes:
+      - uploads_data:/app/uploads
+    depends_on:
+      - db
+
+volumes:
+  postgres_data:
+  uploads_data:
