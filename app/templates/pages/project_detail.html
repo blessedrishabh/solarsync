@@ -1,0 +1,514 @@
+{% extends "layouts/base.html" %}
+
+{% block head %}
+<style>
+    .glass-card {
+        background: white;
+        border: 1px solid #e5e7eb;
+        box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.05);
+    }
+</style>
+{% endblock %}
+
+{% block nav %}
+<nav class="bg-white border-b border-gray-100">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="flex items-center justify-between h-16">
+            <div class="flex items-center space-x-3">
+                <a href="/dashboard" class="flex items-center space-x-3">
+                    <div class="w-9 h-9 rounded-xl bg-solar-500 flex items-center justify-center">
+                        <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"/>
+                        </svg>
+                    </div>
+                    <span class="text-lg font-semibold text-gray-900">SolarSync</span>
+                </a>
+                <span class="text-gray-300">/</span>
+                <a href="/projects" class="text-sm font-medium text-gray-600 hover:text-gray-900">Projects</a>
+                <span class="text-gray-300">/</span>
+                <span class="text-sm font-medium text-solar-600">{{ project.project_id }}</span>
+            </div>
+
+            <div class="flex items-center space-x-3">
+                <a href="/track/{{ project.public_token }}" target="_blank" class="px-3 py-1.5 text-xs font-semibold bg-white hover:bg-gray-50 text-gray-700 border border-gray-200 rounded-lg transition shadow-2xs flex items-center gap-1.5">
+                    <svg class="w-3.5 h-3.5 text-solar-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/>
+                    </svg>
+                    Public Customer View
+                </a>
+            </div>
+        </div>
+    </div>
+</nav>
+{% endblock %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
+
+    <!-- Project Identity Bar -->
+    <div class="glass-card rounded-2xl p-6 bg-gradient-to-r from-white via-white to-amber-50/30">
+        <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+            <div class="space-y-1">
+                <div class="flex items-center gap-2">
+                    <h1 class="text-2xl font-black text-gray-900">{{ project.project_id }}</h1>
+                    <span class="text-xs font-bold px-2.5 py-0.5 rounded-full bg-solar-100 text-solar-800 uppercase tracking-wider">
+                        {{ current_meta.title_en }}
+                    </span>
+                    {% if project.is_stuck %}
+                    <span class="text-xs font-extrabold px-2.5 py-0.5 rounded-full bg-red-100 text-red-800 animate-pulse">
+                        STUCK ({{ project.days_in_current_stage }} Days Idle)
+                    </span>
+                    {% endif %}
+                </div>
+                <p class="text-xs text-gray-500">
+                    Applicant: <span class="font-bold text-gray-800">{{ lead.name }}</span> · Phone: <span class="font-bold text-gray-800">+91 {{ lead.phone }}</span> · PIN: {{ lead.pincode }} · Engineer: {{ project.assigned_engineer }}
+                </p>
+            </div>
+
+            <!-- Milestone Progress Gauge -->
+            <div class="flex items-center gap-6 border-t lg:border-t-0 pt-3 lg:pt-0 border-gray-100 text-sm">
+                <div>
+                    <p class="text-[11px] text-gray-400 font-bold uppercase">System Size</p>
+                    <p class="text-base font-extrabold text-gray-900">{{ quote.system_size_kw if quote else 3.0 }} kW</p>
+                </div>
+                <div>
+                    <p class="text-[11px] text-gray-400 font-bold uppercase">Advance Paid</p>
+                    <p class="text-base font-extrabold text-solar-700">₹{{ "{:,.0f}".format(project.advance_amount_rs) }}</p>
+                </div>
+                <div>
+                    <p class="text-[11px] text-gray-400 font-bold uppercase">Milestone Progress</p>
+                    <p class="text-base font-black text-emerald-700">{{ project.progress_percentage }}%</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Progress bar -->
+        <div class="w-full bg-gray-200 rounded-full h-2 mt-5 overflow-hidden">
+            <div class="bg-gradient-to-r from-solar-500 to-emerald-500 h-2 rounded-full transition-all duration-300" style="width: {{ project.progress_percentage }}%"></div>
+        </div>
+    </div>
+
+    <!-- Main Two-Column Layout -->
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+
+        <!-- Left Column: Milestone Progression & Management (7 cols) -->
+        <div class="lg:col-span-7 space-y-6">
+
+            <!-- Stage Progression Action Box -->
+            <div class="glass-card rounded-2xl p-6 border-2 border-solar-400 bg-gradient-to-b from-white to-amber-50/20 space-y-4">
+                <div class="flex items-center justify-between pb-3 border-b border-gray-100">
+                    <div>
+                        <h2 class="text-base font-bold text-gray-900">Milestone Progression Control</h2>
+                        <p class="text-xs text-gray-500">Advance project to trigger automated customer WhatsApp/SMS notifications.</p>
+                    </div>
+                    <span class="text-xs font-semibold px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-800 border border-emerald-200">
+                        Stage {{ current_meta.index }} of 6
+                    </span>
+                </div>
+
+                {% if next_stage %}
+                <!-- 1-Click Fast Progression Button -->
+                <form action="/projects/{{ project.project_id }}/advance" method="POST" class="space-y-3">
+                    <input type="hidden" name="new_stage" value="{{ next_stage.value }}">
+                    <div class="p-4 rounded-xl bg-solar-50/70 border border-solar-200 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                        <div>
+                            <span class="text-[10px] font-bold uppercase tracking-wider text-solar-700">Next Recommended Milestone:</span>
+                            <h3 class="text-sm font-extrabold text-gray-900">{{ next_stage_meta.title_en }}</h3>
+                            <p class="text-xs text-solar-800 font-medium">{{ next_stage_meta.title_mr }}</p>
+                        </div>
+                        <button type="submit" class="px-5 py-2.5 bg-solar-500 hover:bg-solar-600 active:bg-solar-700 text-white font-bold text-xs rounded-xl transition shadow-sm flex items-center justify-center gap-1.5 shrink-0">
+                            <span>Advance to Next Stage</span>
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"/>
+                            </svg>
+                        </button>
+                    </div>
+                </form>
+                {% else %}
+                <div class="p-4 rounded-xl bg-emerald-50 border border-emerald-200 text-center text-xs text-emerald-800 font-bold">
+                    ✓ Project has reached final milestone (Subsidy Credited). Execution 100% complete!
+                </div>
+                {% endif %}
+
+                <!-- Manual Stage Selector -->
+                <details class="text-xs text-gray-600">
+                    <summary class="font-semibold cursor-pointer hover:text-gray-900 text-gray-700">Override or Select Specific Milestone</summary>
+                    <form action="/projects/{{ project.project_id }}/advance" method="POST" class="mt-3 space-y-3 p-3 bg-gray-50 rounded-xl border border-gray-200">
+                        <div>
+                            <label class="block text-[11px] font-semibold text-gray-700 mb-1">Set Specific Stage</label>
+                            <select name="new_stage" class="w-full text-xs border border-gray-300 rounded-lg px-2.5 py-2 bg-white">
+                                {% for stg in stage_order %}
+                                <option value="{{ stg.value }}" {% if stg == project.stage %}selected{% endif %}>
+                                    {{ stage_metadata[stg].index }}. {{ stage_metadata[stg].title_en }} ({{ stage_metadata[stg].title_mr }})
+                                </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-[11px] font-semibold text-gray-700 mb-1">Transition Note / Reason</label>
+                            <input type="text" name="notes" placeholder="e.g. Inspector visit scheduled for Thursday" class="w-full text-xs border border-gray-300 rounded-lg px-2.5 py-2 bg-white">
+                        </div>
+                        <button type="submit" class="w-full py-2 bg-gray-900 hover:bg-gray-800 text-white text-xs font-semibold rounded-lg">
+                            Update Milestone
+                        </button>
+                    </form>
+                </details>
+            </div>
+
+            <!-- Milestone Timeline Stepper -->
+            <div class="glass-card rounded-2xl p-6 space-y-4">
+                <h3 class="text-sm font-bold text-gray-900 uppercase tracking-wider">Milestone Execution Checklist</h3>
+                
+                <div class="space-y-3">
+                    {% for m in milestones %}
+                    <div class="p-3.5 rounded-xl border flex items-start gap-3.5 text-xs transition {% if m.status == 'active' %}bg-solar-50 border-solar-200{% elif m.status == 'completed' %}bg-emerald-50/40 border-emerald-100{% else %}bg-gray-50/60 border-gray-100 opacity-60{% endif %}">
+                        <div class="w-7 h-7 rounded-full flex items-center justify-center font-bold text-xs shrink-0
+                            {% if m.status == 'completed' %}bg-emerald-500 text-white{% elif m.status == 'active' %}bg-solar-500 text-white{% else %}bg-gray-200 text-gray-600{% endif %}
+                        ">
+                            {% if m.status == 'completed' %}✓{% else %}{{ m.meta.index }}{% endif %}
+                        </div>
+
+                        <div class="flex-1 min-w-0">
+                            <div class="flex items-center justify-between">
+                                <p class="font-bold text-gray-900">{{ m.meta.title_en }}</p>
+                                <span class="text-[10px] font-semibold px-2 py-0.5 rounded-full
+                                    {% if m.status == 'completed' %}bg-emerald-100 text-emerald-800{% elif m.status == 'active' %}bg-solar-100 text-solar-800{% else %}bg-gray-100 text-gray-500{% endif %}
+                                ">
+                                    {{ m.status | capitalize }}
+                                </span>
+                            </div>
+                            <p class="text-[11px] text-gray-500 mt-0.5">{{ m.meta.title_mr }} · SLA: ~{{ m.meta.sla_days }} days</p>
+                            <p class="text-[11px] text-gray-600 mt-1">{{ m.meta.description }}</p>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+
+        </div>
+
+        <!-- Right Column: Document Attachments & Mock Notification Feed (5 cols) -->
+        <div class="lg:col-span-5 space-y-6">
+
+            <!-- Document Upload Slot -->
+            <div class="glass-card rounded-2xl p-6 space-y-4">
+                <div class="flex items-center justify-between pb-3 border-b border-gray-100">
+                    <h3 class="text-sm font-bold text-gray-900 uppercase tracking-wider">Project Documents</h3>
+                    <span class="text-xs text-gray-400">{{ project.documents | length }} Files</span>
+                </div>
+
+                <!-- Document Upload Form -->
+                <form action="/projects/{{ project.project_id }}/documents" method="POST" enctype="multipart/form-data" class="space-y-3 p-3.5 rounded-xl bg-gray-50 border border-gray-200">
+                    <div>
+                        <label class="block text-[11px] font-semibold text-gray-700 mb-1">Document Category</label>
+                        <select name="document_type" class="w-full text-xs border border-gray-300 rounded-lg px-2.5 py-1.5 bg-white">
+                            <option value="survey_report">Site Survey & Shadow Analysis</option>
+                            <option value="advance_receipt">Advance Token Receipt</option>
+                            <option value="installation_photo">Installation Completion Photo</option>
+                            <option value="net_meter_report">MSEDCL Net-Meter Test Report</option>
+                            <option value="subsidy_acknowledgement">National Portal DBT Acknowledgement</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-[11px] font-semibold text-gray-700 mb-1">Document Title</label>
+                        <input type="text" name="title" required placeholder="e.g. MSEDCL Joint Meter Test Certificate" class="w-full text-xs border border-gray-300 rounded-lg px-2.5 py-1.5 bg-white">
+                    </div>
+                    <div>
+                        <label class="block text-[11px] font-semibold text-gray-700 mb-1">File Attachment (PDF / Image)</label>
+                        <input type="file" name="file" required class="w-full text-xs text-gray-500 file:mr-2 file:py-1 file:px-2 file:rounded-md file:border-0 file:text-xs file:font-semibold file:bg-solar-50 file:text-solar-700 hover:file:bg-solar-100">
+                    </div>
+                    <button type="submit" class="w-full py-2 bg-solar-500 hover:bg-solar-600 text-white text-xs font-bold rounded-lg shadow-xs">
+                        + Attach Document
+                    </button>
+                </form>
+
+                <!-- Existing Documents List -->
+                <div class="space-y-2">
+                    {% for doc in project.documents %}
+                    <div class="p-2.5 rounded-xl border border-gray-100 bg-white hover:bg-gray-50 transition flex items-center justify-between text-xs">
+                        <div class="truncate mr-2">
+                            <p class="font-bold text-gray-900 truncate">{{ doc.title }}</p>
+                            <p class="text-[10px] text-gray-400">{{ doc.document_type }} · {{ doc.file_size_kb }} KB</p>
+                        </div>
+                        <a href="/{{ doc.file_path }}" target="_blank" class="px-2 py-0.5 text-xs text-solar-700 font-semibold bg-solar-50 rounded border border-solar-200 shrink-0">
+                            View
+                        </a>
+                    </div>
+                    {% else %}
+                    <p class="text-xs text-gray-400 text-center py-2">No documents attached yet.</p>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <!-- Outgoing WhatsApp / SMS Notification Log -->
+            <div class="glass-card rounded-2xl p-6 space-y-4">
+                <div class="flex items-center justify-between pb-3 border-b border-gray-100">
+                    <div>
+                        <h3 class="text-sm font-bold text-gray-900 uppercase tracking-wider">Customer Alerts & Dispatch</h3>
+                        <p class="text-[11px] text-gray-400">Automated SMS & WhatsApp milestone dispatches</p>
+                    </div>
+                    <span class="text-xs text-emerald-700 font-semibold bg-emerald-50 border border-emerald-200 px-2.5 py-0.5 rounded-full flex items-center gap-1">
+                        <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+                        {{ project.notifications | length }} Dispatched
+                    </span>
+                </div>
+
+                {% if project.notifications %}
+                <!-- Filter Pills -->
+                <div class="flex items-center gap-1.5">
+                    <button type="button" onclick="filterChannel('all')" data-filter="all" class="channel-tab px-2.5 py-1 text-xs font-bold rounded-lg bg-solar-500 text-white transition">
+                        All ({{ project.notifications | length }})
+                    </button>
+                    <button type="button" onclick="filterChannel('whatsapp')" data-filter="whatsapp" class="channel-tab px-2.5 py-1 text-xs font-medium rounded-lg bg-gray-100 hover:bg-gray-200 text-gray-700 transition">
+                        WhatsApp
+                    </button>
+                    <button type="button" onclick="filterChannel('sms')" data-filter="sms" class="channel-tab px-2.5 py-1 text-xs font-medium rounded-lg bg-gray-100 hover:bg-gray-200 text-gray-700 transition">
+                        SMS
+                    </button>
+                </div>
+
+                <div class="space-y-3">
+                    {% for n in project.notifications %}
+                    <div class="notification-card p-3.5 rounded-xl border border-gray-200 bg-white hover:border-solar-300 hover:shadow-xs transition space-y-2.5 text-xs" data-channel="{{ n.channel }}">
+                        <!-- Top Row: Channel, Phone, Time, Delivered -->
+                        <div class="flex items-center justify-between gap-2">
+                            <div class="flex items-center gap-1.5 min-w-0">
+                                {% if n.channel == 'whatsapp' %}
+                                <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-800 border border-emerald-200 shrink-0">
+                                    <svg class="w-3 h-3 text-emerald-600 fill-current" viewBox="0 0 24 24"><path d="M12.031 2C6.516 2 2.028 6.488 2.028 12.003c0 1.839.497 3.633 1.442 5.213L2 22.003l4.908-1.423c1.528.887 3.267 1.373 5.123 1.373 5.516 0 10.003-4.488 10.003-10.003C22.034 6.488 17.547 2 12.031 2zm0 18.286c-1.637 0-3.235-.453-4.63-1.312l-.332-.206-2.909.843.844-2.836-.226-.346a8.23 8.23 0 01-1.309-4.426c0-4.57 3.718-8.288 8.288-8.288 4.57 0 8.288 3.718 8.288 8.288 0 4.57-3.718 8.288-8.288 8.288z"/></svg>
+                                    WhatsApp
+                                </span>
+                                {% else %}
+                                <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-blue-50 text-blue-800 border border-blue-200 shrink-0">
+                                    SMS
+                                </span>
+                                {% endif %}
+                                <span class="text-xs font-semibold text-gray-700 truncate">+91 {{ n.recipient_phone }}</span>
+                            </div>
+                            <div class="flex items-center gap-2 shrink-0">
+                                <span class="text-[10px] text-gray-400">{{ n.sent_at.strftime('%d %b, %H:%M') }}</span>
+                                <span class="inline-flex items-center gap-0.5 text-[10px] font-bold text-emerald-700 bg-emerald-50 px-1.5 py-0.5 rounded-md border border-emerald-200/50">
+                                    <span class="text-sky-500 font-bold">✓✓</span>
+                                    Delivered
+                                </span>
+                            </div>
+                        </div>
+
+                        <!-- Milestone Summary -->
+                        <div class="bg-gray-50/80 p-2.5 rounded-lg border border-gray-100 space-y-0.5">
+                            <div class="flex items-center justify-between">
+                                <p class="font-bold text-gray-900 text-xs">
+                                    📍 {{ stage_metadata[n.stage].title_en }}
+                                </p>
+                                <span class="text-[10px] text-solar-800 font-medium">
+                                    {{ stage_metadata[n.stage].title_mr }}
+                                </span>
+                            </div>
+                            <p class="text-[11px] text-gray-500 line-clamp-2 leading-relaxed">
+                                {{ stage_metadata[n.stage].description }}
+                            </p>
+                        </div>
+
+                        <!-- Actions Bar -->
+                        <div class="flex items-center justify-between pt-1">
+                            <button type="button" onclick="openWhatsAppModal({{ n.id }})" class="px-2.5 py-1 bg-white hover:bg-emerald-50 text-emerald-800 text-[11px] font-bold rounded-lg border border-gray-200 hover:border-emerald-300 transition shadow-2xs flex items-center gap-1.5 shrink-0">
+                                <svg class="w-3 h-3 text-emerald-600 fill-current" viewBox="0 0 24 24"><path d="M12.031 2C6.516 2 2.028 6.488 2.028 12.003c0 1.839.497 3.633 1.442 5.213L2 22.003l4.908-1.423c1.528.887 3.267 1.373 5.123 1.373 5.516 0 10.003-4.488 10.003-10.003C22.034 6.488 17.547 2 12.031 2zm0 18.286c-1.637 0-3.235-.453-4.63-1.312l-.332-.206-2.909.843.844-2.836-.226-.346a8.23 8.23 0 01-1.309-4.426c0-4.57 3.718-8.288 8.288-8.288 4.57 0 8.288 3.718 8.288 8.288 0 4.57-3.718 8.288-8.288 8.288z"/></svg>
+                                Preview WhatsApp Chat
+                            </button>
+
+                            <button type="button" id="copy-btn-{{ n.id }}" onclick="copyAlertDirect({{ n.id }})" class="px-2 py-1 text-gray-500 hover:text-gray-900 hover:bg-gray-100 rounded-md text-[11px] font-semibold transition flex items-center gap-1">
+                                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"/></svg>
+                                Copy
+                            </button>
+                        </div>
+
+                        <!-- Hidden Metadata for JS Modal -->
+                        <textarea id="raw-msg-{{ n.id }}" class="hidden">{{ n.message_text }}</textarea>
+                        <span id="date-msg-{{ n.id }}" class="hidden">{{ n.sent_at.strftime('%A, %d %B %Y') }}</span>
+                        <span id="time-msg-{{ n.id }}" class="hidden">{{ n.sent_at.strftime('%I:%M %p') }}</span>
+                        <span id="phone-msg-{{ n.id }}" class="hidden">{{ n.recipient_phone }}</span>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <p class="text-xs text-gray-400 text-center py-4">No alerts dispatched yet.</p>
+                {% endif %}
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+
+<!-- WhatsApp Chat Preview Modal -->
+<div id="whatsappModal" class="fixed inset-0 z-50 hidden bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl shadow-2xl max-w-md w-full overflow-hidden border border-gray-200 transform transition-all">
+        <!-- WhatsApp Header -->
+        <div class="bg-[#075e54] text-white px-4 py-3 flex items-center justify-between">
+            <div class="flex items-center gap-3">
+                <button type="button" onclick="closeWhatsAppModal()" class="text-white hover:text-gray-200 p-1">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
+                </button>
+                <div class="relative">
+                    <div class="w-10 h-10 rounded-full bg-emerald-800 flex items-center justify-center font-bold text-white text-base">
+                        ☀️
+                    </div>
+                    <span class="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 bg-emerald-400 border-2 border-[#075e54] rounded-full"></span>
+                </div>
+                <div>
+                    <div class="flex items-center gap-1.5">
+                        <span class="font-bold text-sm leading-tight">SolarSync · Company A</span>
+                        <svg class="w-3.5 h-3.5 text-emerald-300 fill-current" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M6.267 3.455a3.066 3.066 0 001.745-.723 3.066 3.066 0 013.976 0 3.066 3.066 0 001.745.723 3.066 3.066 0 012.812 2.812c.051.643.304 1.254.723 1.745a3.066 3.066 0 010 3.976 3.066 3.066 0 00-.723 1.745 3.066 3.066 0 01-2.812 2.812 3.066 3.066 0 00-1.745.723 3.066 3.066 0 01-3.976 0 3.066 3.066 0 00-1.745-.723 3.066 3.066 0 01-2.812-2.812 3.066 3.066 0 00-.723-1.745 3.066 3.066 0 010-3.976 3.066 3.066 0 00.723-1.745 3.066 3.066 0 012.812-2.812zm7.44 5.252a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/></svg>
+                    </div>
+                    <p class="text-[11px] text-emerald-200">Official Business Account · online</p>
+                </div>
+            </div>
+            <button type="button" onclick="closeWhatsAppModal()" class="text-emerald-200 hover:text-white p-1 rounded-lg">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+            </button>
+        </div>
+
+        <!-- WhatsApp Chat Body -->
+        <div class="p-4 space-y-3 bg-[#efeae2] min-h-[280px] max-h-[440px] overflow-y-auto">
+            <div class="text-center">
+                <span id="modalDate" class="inline-block px-3 py-1 bg-white/80 backdrop-blur-xs text-[11px] font-semibold text-gray-600 rounded-md shadow-2xs uppercase tracking-wider">
+                    TODAY
+                </span>
+            </div>
+
+            <!-- WhatsApp Message Bubble -->
+            <div class="flex justify-start">
+                <div class="relative bg-white rounded-2xl rounded-tl-xs p-3.5 shadow-xs max-w-[94%] border border-gray-100 text-xs text-gray-800 space-y-2">
+                    <div id="modalMessageContent" class="leading-relaxed">
+                        <!-- Filled by JS -->
+                    </div>
+                    <div class="flex items-center justify-end gap-1 pt-1 text-[10px] text-gray-400">
+                        <span id="modalTimestamp">14:30</span>
+                        <span class="text-sky-500 font-bold">✓✓</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Modal Actions Bar -->
+        <div class="p-3 bg-gray-50 border-t border-gray-200 flex items-center justify-between gap-2">
+            <button type="button" id="copyMessageBtn" onclick="copyModalMessage()" class="px-3 py-2 bg-white hover:bg-gray-100 text-gray-700 font-semibold text-xs rounded-xl border border-gray-300 transition flex items-center gap-1.5 shadow-2xs">
+                <svg class="w-3.5 h-3.5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"/></svg>
+                <span id="copyBtnText">Copy Text</span>
+            </button>
+            <div class="flex items-center gap-2">
+                <a id="modalWaWebLink" href="#" target="_blank" class="px-3 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-xl transition shadow-xs flex items-center gap-1.5">
+                    <span>Send via WhatsApp Web</span>
+                </a>
+                <button type="button" onclick="closeWhatsAppModal()" class="px-3 py-2 bg-gray-200 hover:bg-gray-300 text-gray-700 font-semibold text-xs rounded-xl transition">
+                    Close
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function formatWhatsAppText(raw) {
+    if (!raw) return '';
+    let text = raw
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;");
+    text = text.replace(/\*([^\*]+)\*/g, '<strong class="font-bold text-gray-900">$1</strong>');
+    text = text.replace(/_([^_]+)_/g, '<em class="italic">$1</em>');
+    text = text.replace(/~([^~]+)~/g, '<del class="line-through">$1</del>');
+    text = text.replace(/(https?:\/\/[^\s<]+)/g, '<a href="$1" target="_blank" class="text-emerald-700 underline font-semibold hover:text-emerald-900 break-all inline-block my-1 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">$1</a>');
+    text = text.replace(/\n/g, '<br>');
+    return text;
+}
+
+let activeNotificationText = '';
+
+function openWhatsAppModal(id) {
+    const rawElem = document.getElementById('raw-msg-' + id);
+    const dateElem = document.getElementById('date-msg-' + id);
+    const timeElem = document.getElementById('time-msg-' + id);
+    const phoneElem = document.getElementById('phone-msg-' + id);
+
+    if (!rawElem) return;
+
+    activeNotificationText = rawElem.value || rawElem.textContent;
+    document.getElementById('modalMessageContent').innerHTML = formatWhatsAppText(activeNotificationText);
+    if (dateElem) document.getElementById('modalDate').textContent = dateElem.textContent;
+    if (timeElem) document.getElementById('modalTimestamp').textContent = timeElem.textContent;
+
+    // Set WhatsApp Web Link
+    const waLink = document.getElementById('modalWaWebLink');
+    if (waLink && phoneElem) {
+        const cleanPhone = phoneElem.textContent.trim().replace(/[^0-9]/g, '');
+        waLink.href = 'https://api.whatsapp.com/send?phone=91' + cleanPhone + '&text=' + encodeURIComponent(activeNotificationText);
+    }
+
+    const copyText = document.getElementById('copyBtnText');
+    if (copyText) copyText.textContent = 'Copy Text';
+
+    const modal = document.getElementById('whatsappModal');
+    modal.classList.remove('hidden');
+    document.body.style.overflow = 'hidden';
+}
+
+function closeWhatsAppModal() {
+    const modal = document.getElementById('whatsappModal');
+    modal.classList.add('hidden');
+    document.body.style.overflow = '';
+}
+
+function copyModalMessage() {
+    if (!activeNotificationText) return;
+    navigator.clipboard.writeText(activeNotificationText).then(() => {
+        const copyText = document.getElementById('copyBtnText');
+        if (copyText) {
+            copyText.textContent = '✓ Copied!';
+            setTimeout(() => { copyText.textContent = 'Copy Text'; }, 2000);
+        }
+    });
+}
+
+function copyAlertDirect(id) {
+    const rawElem = document.getElementById('raw-msg-' + id);
+    if (!rawElem) return;
+    const text = rawElem.value || rawElem.textContent;
+    navigator.clipboard.writeText(text).then(() => {
+        const btn = document.getElementById('copy-btn-' + id);
+        if (btn) {
+            const original = btn.innerHTML;
+            btn.innerHTML = '<span class="text-emerald-600 font-bold text-[10px]">✓ Copied</span>';
+            setTimeout(() => { btn.innerHTML = original; }, 1800);
+        }
+    });
+}
+
+function filterChannel(channel) {
+    const cards = document.querySelectorAll('.notification-card');
+    cards.forEach(card => {
+        if (channel === 'all' || card.getAttribute('data-channel') === channel) {
+            card.style.display = '';
+        } else {
+            card.style.display = 'none';
+        }
+    });
+
+    document.querySelectorAll('.channel-tab').forEach(tab => {
+        if (tab.getAttribute('data-filter') === channel) {
+            tab.className = 'channel-tab px-2.5 py-1 text-xs font-bold rounded-lg bg-solar-500 text-white transition';
+        } else {
+            tab.className = 'channel-tab px-2.5 py-1 text-xs font-medium rounded-lg bg-gray-100 hover:bg-gray-200 text-gray-700 transition';
+        }
+    });
+}
+
+document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') closeWhatsAppModal();
+});
+document.getElementById('whatsappModal')?.addEventListener('click', (e) => {
+    if (e.target.id === 'whatsappModal') closeWhatsAppModal();
+});
+</script>
+{% endblock %}

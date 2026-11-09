@@ -1,0 +1,336 @@
+{% extends "layouts/base.html" %}
+
+{% block head %}
+<style>
+    .glass-card {
+        background: white;
+        border: 1px solid #e5e7eb;
+        box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.05);
+    }
+    @keyframes pulse-subtle {
+        0%, 100% { opacity: 1; transform: scale(1); }
+        50% { opacity: 0.85; transform: scale(1.04); }
+    }
+    .pulse-danger {
+        animation: pulse-subtle 2s infinite ease-in-out;
+    }
+</style>
+{% endblock %}
+
+{% block nav %}
+<nav class="bg-white border-b border-gray-100">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="flex items-center justify-between h-16">
+            <div class="flex items-center space-x-3">
+                <a href="/dashboard" class="flex items-center space-x-3">
+                    <div class="w-9 h-9 rounded-xl bg-solar-500 flex items-center justify-center">
+                        <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"/>
+                        </svg>
+                    </div>
+                    <span class="text-lg font-semibold text-gray-900">SolarSync</span>
+                </a>
+            </div>
+
+            <div class="hidden md:flex items-center space-x-1">
+                <a href="/dashboard" class="px-3 py-2 rounded-lg text-sm font-medium text-gray-600 hover:text-gray-900 hover:bg-gray-50">
+                    Dashboard
+                </a>
+                <a href="/leads" class="px-3 py-2 rounded-lg text-sm font-medium text-gray-600 hover:text-gray-900 hover:bg-gray-50">
+                    Leads Pipeline
+                </a>
+                <a href="/quotes" class="px-3 py-2 rounded-lg text-sm font-medium text-gray-600 hover:text-gray-900 hover:bg-gray-50">
+                    Quotes
+                </a>
+                <a href="/projects" class="px-3 py-2 rounded-lg text-sm font-medium text-solar-600 bg-solar-50">
+                    Projects Tracker
+                </a>
+                {% if user.role.value == 'admin' %}
+                <a href="/admin/rules" class="px-3 py-2 rounded-lg text-sm font-medium text-gray-600 hover:text-gray-900 hover:bg-gray-50">
+                    Dated Rules
+                </a>
+                {% endif %}
+            </div>
+
+            <div class="flex items-center space-x-4">
+                <div class="text-right hidden sm:block">
+                    <p class="text-sm font-medium text-gray-900">{{ user.name }}</p>
+                    <p class="text-xs text-gray-500 capitalize">{{ user.role.value }}</p>
+                </div>
+                <div class="w-9 h-9 rounded-full bg-solar-100 text-solar-700 flex items-center justify-center text-sm font-semibold">
+                    {{ user.name[0] | upper }}
+                </div>
+                <a href="/auth/logout" class="text-gray-400 hover:text-gray-600 transition" title="Logout">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/>
+                    </svg>
+                </a>
+            </div>
+        </div>
+    </div>
+</nav>
+{% endblock %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
+
+    <!-- Header & Action -->
+    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-gray-200">
+        <div>
+            <h1 class="text-2xl font-bold text-gray-900">Installation Project Tracker</h1>
+            <p class="text-sm text-gray-500 mt-1">
+                End-to-end milestone execution from advance payment to central subsidy credit.
+            </p>
+        </div>
+        <div class="flex items-center gap-3">
+            <a href="/quotes" class="px-4 py-2 bg-solar-500 hover:bg-solar-600 text-white text-sm font-medium rounded-lg transition shadow-sm flex items-center gap-1.5">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+                </svg>
+                Convert Accepted Quote to Project
+            </a>
+        </div>
+    </div>
+
+    <!-- Executive Operational Metrics (Includes Company A Stuck Projects Widget) -->
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        
+        <div class="glass-card rounded-xl p-5 border-l-4 border-l-blue-500">
+            <p class="text-xs font-semibold text-gray-400 uppercase tracking-wider">Active Installations</p>
+            <h3 class="text-2xl font-black text-gray-900 mt-1">{{ active_count }}</h3>
+            <p class="text-xs text-gray-500 mt-1">Sites in physical execution</p>
+        </div>
+
+        <!-- Stuck Projects Alert Card -->
+        <div class="glass-card rounded-xl p-5 border-l-4 {{ 'border-l-red-500 bg-red-50/20 pulse-danger' if stuck_count > 0 else 'border-l-gray-300' }}">
+            <div class="flex items-center justify-between">
+                <p class="text-xs font-semibold uppercase tracking-wider {{ 'text-red-600 font-bold' if stuck_count > 0 else 'text-gray-400' }}">
+                    Stuck Projects (>5 Days)
+                </p>
+                {% if stuck_count > 0 %}
+                <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-red-100 text-red-800">
+                    ATTENTION
+                </span>
+                {% endif %}
+            </div>
+            <h3 class="text-2xl font-black mt-1 {{ 'text-red-600' if stuck_count > 0 else 'text-gray-900' }}">
+                {{ stuck_count }}
+            </h3>
+            <p class="text-xs text-gray-500 mt-1">Requires coordinator intervention</p>
+        </div>
+
+        <div class="glass-card rounded-xl p-5 border-l-4 border-l-amber-500">
+            <p class="text-xs font-semibold text-gray-400 uppercase tracking-wider">Net-Metering Queue</p>
+            <h3 class="text-2xl font-black text-gray-900 mt-1">{{ net_meter_count }}</h3>
+            <p class="text-xs text-gray-500 mt-1">Awaiting MSEDCL grid meter</p>
+        </div>
+
+        <div class="glass-card rounded-xl p-5 border-l-4 border-l-emerald-500">
+            <p class="text-xs font-semibold text-gray-400 uppercase tracking-wider">Subsidy Credited</p>
+            <h3 class="text-2xl font-black text-emerald-700 mt-1">{{ completed_count }}</h3>
+            <p class="text-xs text-emerald-600 font-medium mt-1">100% Commissioned & Paid</p>
+        </div>
+
+    </div>
+
+    <!-- Live Search & Filter Bar -->
+    <div class="glass-card rounded-xl p-4 flex flex-col md:flex-row items-center justify-between gap-4">
+        <div class="relative w-full md:w-96">
+            <svg class="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+            </svg>
+            <input type="text" id="project-search" placeholder="Search by customer name, phone, or project ID..." class="w-full pl-9 pr-4 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-solar-500" onkeyup="filterProjects()">
+        </div>
+
+        <!-- Filter Tabs -->
+        <div class="flex items-center gap-2 w-full md:w-auto overflow-x-auto pb-1 md:pb-0">
+            <button onclick="setFilter('all')" id="btn-filter-all" class="filter-tab px-3 py-1.5 text-xs font-semibold rounded-lg bg-solar-50 text-solar-700 border border-solar-200">
+                All ({{ total_count }})
+            </button>
+            <button onclick="setFilter('stuck')" id="btn-filter-stuck" class="filter-tab px-3 py-1.5 text-xs font-medium rounded-lg text-red-600 hover:bg-red-50">
+                Stuck ({{ stuck_count }})
+            </button>
+            <button onclick="setFilter('active')" id="btn-filter-active" class="filter-tab px-3 py-1.5 text-xs font-medium rounded-lg text-gray-600 hover:bg-gray-100">
+                Active ({{ active_count }})
+            </button>
+            <button onclick="setFilter('completed')" id="btn-filter-completed" class="filter-tab px-3 py-1.5 text-xs font-medium rounded-lg text-gray-600 hover:bg-gray-100">
+                Completed ({{ completed_count }})
+            </button>
+        </div>
+    </div>
+
+    <!-- Zero-Horizontal-Scroll Projects Card Pipeline -->
+    {% if projects %}
+    <div class="space-y-3" id="projects-container">
+        {% for p in projects %}
+        {% set lead = p.lead %}
+        {% set quote = p.quote %}
+        {% set meta = stage_metadata[p.stage] %}
+        <div class="project-card glass-card rounded-xl p-5 hover:border-solar-300 transition duration-150 {{ 'border-l-4 border-l-red-500' if p.is_stuck else '' }}"
+             data-stage="{{ p.stage.value }}"
+             data-stuck="{{ 'true' if p.is_stuck else 'false' }}"
+             data-name="{{ lead.name | lower if lead else '' }}"
+             data-phone="{{ lead.phone if lead else '' }}"
+             data-projectid="{{ p.project_id | lower }}">
+
+            <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+                
+                <!-- Col 1: Project Identity & Customer -->
+                <div class="flex items-start gap-4 min-w-[280px]">
+                    <div class="w-11 h-11 rounded-xl flex items-center justify-center font-bold text-xs shrink-0
+                        {% if p.is_stuck %}
+                            bg-red-100 text-red-700 border border-red-200
+                        {% elif p.stage.value == 'subsidy_credited' %}
+                            bg-emerald-100 text-emerald-800 border border-emerald-200
+                        {% else %}
+                            bg-solar-100 text-solar-800 border border-solar-200
+                        {% endif %}
+                    ">
+                        {{ p.progress_percentage }}%
+                    </div>
+                    <div>
+                        <div class="flex items-center gap-2">
+                            <a href="/projects/{{ p.project_id }}" class="font-bold text-gray-900 hover:text-solar-600 text-base transition">
+                                {{ lead.name if lead else 'Customer' }}
+                            </a>
+                            <span class="text-xs font-semibold px-2 py-0.5 rounded-full bg-gray-100 text-gray-700">
+                                {{ p.project_id }}
+                            </span>
+                            {% if p.is_stuck %}
+                            <span class="text-[10px] font-extrabold px-2 py-0.5 rounded-full bg-red-100 text-red-700 border border-red-200 animate-pulse">
+                                STUCK ({{ p.days_in_current_stage }}d idle)
+                            </span>
+                            {% endif %}
+                        </div>
+                        <p class="text-xs text-gray-500 mt-1">
+                            +91 {{ lead.phone if lead else '—' }} · PIN {{ lead.pincode if lead else '—' }} · {{ p.assigned_engineer }}
+                        </p>
+                    </div>
+                </div>
+
+                <!-- Col 2: Current Stage & Progress -->
+                <div class="flex-1 max-w-sm space-y-1.5 border-y lg:border-y-0 py-2 lg:py-0 border-gray-100">
+                    <div class="flex items-center justify-between text-xs">
+                        <span class="font-bold text-gray-800">{{ meta.title_en }}</span>
+                        <span class="text-[11px] text-gray-500">{{ p.days_in_current_stage }}d in stage</span>
+                    </div>
+                    <div class="w-full bg-gray-100 rounded-full h-2 overflow-hidden">
+                        <div class="h-2 rounded-full {{ 'bg-red-500' if p.is_stuck else ('bg-emerald-500' if p.stage.value == 'subsidy_credited' else 'bg-solar-500') }}" style="width: {{ p.progress_percentage }}%"></div>
+                    </div>
+                    <p class="text-[11px] text-gray-500 truncate" title="{{ meta.description }}">
+                        {{ meta.title_mr }} · {{ meta.action_required }}
+                    </p>
+                </div>
+
+                <!-- Col 3: Capacity & Financial Snapshot -->
+                <div class="flex items-center gap-6 text-xs text-left shrink-0">
+                    <div>
+                        <p class="text-[10px] uppercase font-bold text-gray-400">System Size</p>
+                        <p class="text-sm font-bold text-gray-900">{{ quote.system_size_kw if quote else 3.0 }} kW</p>
+                    </div>
+                    <div>
+                        <p class="text-[10px] uppercase font-bold text-solar-700">Advance Paid</p>
+                        <p class="text-sm font-bold text-solar-800">₹{{ "{:,.0f}".format(p.advance_amount_rs) }}</p>
+                    </div>
+                </div>
+
+                <!-- Col 4: Action Buttons -->
+                <div class="flex items-center justify-between lg:justify-end gap-2 shrink-0">
+                    <!-- Copy Customer Link Button -->
+                    <button onclick="copyCustomerLink('{{ p.public_token }}')" class="p-2 text-gray-500 hover:text-solar-600 hover:bg-gray-100 rounded-lg transition" title="Copy Public Customer Tracking Link">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"/>
+                        </svg>
+                    </button>
+                    
+                    <a href="/track/{{ p.public_token }}" target="_blank" class="px-3 py-1.5 text-xs font-semibold bg-white hover:bg-gray-50 text-gray-700 border border-gray-200 rounded-lg transition shadow-2xs">
+                        Customer View
+                    </a>
+                    
+                    <a href="/projects/{{ p.project_id }}" class="px-3.5 py-1.5 text-xs font-bold bg-solar-500 hover:bg-solar-600 text-white rounded-lg transition shadow-sm">
+                        Manage
+                    </a>
+                </div>
+
+            </div>
+
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div class="glass-card rounded-2xl p-12 text-center space-y-3">
+        <p class="text-sm text-gray-500">No installation projects active yet.</p>
+    </div>
+    {% endif %}
+
+</div>
+
+<!-- Copy Link Toast Notification -->
+<div id="copy-toast" class="hidden fixed bottom-6 right-6 z-50 bg-gray-900 text-white text-xs font-medium px-4 py-2.5 rounded-xl shadow-lg flex items-center gap-2">
+    <svg class="w-4 h-4 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+    </svg>
+    <span>Customer Tracking Link Copied to Clipboard!</span>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    let currentFilter = 'all';
+
+    function setFilter(filterType) {
+        currentFilter = filterType;
+        document.querySelectorAll('.filter-tab').forEach(b => {
+            b.classList.remove('bg-solar-50', 'text-solar-700', 'border', 'border-solar-200', 'bg-red-50');
+            b.classList.add('text-gray-600');
+        });
+        const activeBtn = document.getElementById('btn-filter-' + filterType);
+        if (activeBtn) {
+            activeBtn.classList.add('bg-solar-50', 'text-solar-700', 'border', 'border-solar-200');
+            activeBtn.classList.remove('text-gray-600');
+        }
+        filterProjects();
+    }
+
+    function filterProjects() {
+        const query = document.getElementById('project-search').value.toLowerCase();
+        const cards = document.querySelectorAll('.project-card');
+
+        cards.forEach(card => {
+            const isStuck = card.getAttribute('data-stuck') === 'true';
+            const stage = card.getAttribute('data-stage');
+            const name = card.getAttribute('data-name');
+            const phone = card.getAttribute('data-phone');
+            const pid = card.getAttribute('data-projectid');
+
+            let matchesFilter = true;
+            if (currentFilter === 'stuck') {
+                matchesFilter = isStuck;
+            } else if (currentFilter === 'active') {
+                matchesFilter = stage !== 'subsidy_credited';
+            } else if (currentFilter === 'completed') {
+                matchesFilter = stage === 'subsidy_credited';
+            }
+
+            const matchesQuery = !query || name.includes(query) || phone.includes(query) || pid.includes(query);
+
+            if (matchesFilter && matchesQuery) {
+                card.style.display = '';
+            } else {
+                card.style.display = 'none';
+            }
+        });
+    }
+
+    function copyCustomerLink(token) {
+        const url = window.location.origin + '/track/' + token;
+        navigator.clipboard.writeText(url).then(() => {
+            const toast = document.getElementById('copy-toast');
+            toast.classList.remove('hidden');
+            setTimeout(() => {
+                toast.classList.add('hidden');
+            }, 3000);
+        });
+    }
+</script>
+{% endblock %}

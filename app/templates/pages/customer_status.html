@@ -1,0 +1,491 @@
+{% extends "layouts/base.html" %}
+
+{% block head %}
+<style>
+    .glass-card {
+        background: white;
+        border: 1px solid #e5e7eb;
+        box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.05);
+    }
+    @keyframes pulse-subtle {
+        0%, 100% { opacity: 1; transform: scale(1); }
+        50% { opacity: 0.85; transform: scale(1.05); }
+    }
+    .pulse-dot {
+        animation: pulse-subtle 2s infinite ease-in-out;
+    }
+</style>
+{% endblock %}
+
+{% block nav %}
+<nav class="bg-white border-b border-gray-100">
+    <div class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="flex items-center justify-between h-16">
+            <div class="flex items-center space-x-3">
+                <div class="w-9 h-9 rounded-xl bg-solar-500 flex items-center justify-center">
+                    <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"/>
+                    </svg>
+                </div>
+                <div>
+                    <span class="text-lg font-bold text-gray-900">SolarSync</span>
+                    <span class="text-xs text-gray-400 block -mt-1">Company A · Nagpur Installations</span>
+                </div>
+            </div>
+
+            <div class="flex items-center space-x-3">
+                <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-800 border border-emerald-200">
+                    <span class="w-2 h-2 rounded-full bg-emerald-500 pulse-dot"></span>
+                    Live Customer Tracking
+                </span>
+                {% if quote %}
+                <a href="/quotes/{{ quote.quote_number }}/pdf" target="_blank" class="text-xs font-medium bg-white hover:bg-gray-50 text-gray-700 border border-gray-200 px-3 py-1.5 rounded-lg transition shadow-xs flex items-center gap-1">
+                    <svg class="w-3.5 h-3.5 text-solar-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                    </svg>
+                    Quotation PDF
+                </a>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</nav>
+{% endblock %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
+
+    <!-- Header Section -->
+    <div class="text-center space-y-2">
+        <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-solar-50 border border-solar-200 text-solar-800 text-xs font-semibold uppercase tracking-wider">
+            <span>Rooftop Solar Project Tracker</span>
+            <span>·</span>
+            <span class="font-bold">{{ project.project_id }}</span>
+        </div>
+        <h1 class="text-2xl sm:text-3xl font-extrabold text-gray-900 tracking-tight">
+            Installation Status for {{ lead.name }}
+        </h1>
+        <p class="text-sm text-gray-500 max-w-lg mx-auto">
+            Live progress for your solar installation in PIN {{ lead.pincode }}, Vidarbha. Updates sync automatically on every engineering and DISCOM milestone.
+        </p>
+    </div>
+
+    <!-- Active Stage Highlight Banner -->
+    <div class="glass-card rounded-2xl p-6 bg-gradient-to-r from-amber-50/70 via-white to-emerald-50/40 border-2 border-solar-300 shadow-sm">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div class="space-y-1">
+                <div class="flex items-center gap-2">
+                    <span class="text-xs font-bold uppercase tracking-wider text-solar-700 bg-solar-100 px-2 py-0.5 rounded-md">
+                        Current Milestone (टप्पा)
+                    </span>
+                    <span class="text-xs text-gray-500">Updated {{ project.stage_updated_at.strftime('%d %b %Y') }}</span>
+                </div>
+                <h2 class="text-xl font-black text-gray-900">
+                    {{ current_meta.title_en }}
+                </h2>
+                <p class="text-sm font-semibold text-solar-800">
+                    {{ current_meta.title_mr }}
+                </p>
+                <p class="text-xs text-gray-600 mt-2 max-w-xl leading-relaxed">
+                    {{ current_meta.description }}
+                </p>
+            </div>
+
+            <!-- Milestone Progress Gauge -->
+            <div class="sm:text-right shrink-0 pt-2 sm:pt-0 border-t sm:border-t-0 border-gray-100">
+                <p class="text-[11px] font-bold text-gray-400 uppercase tracking-wider">Overall Progress</p>
+                <p class="text-3xl font-black text-emerald-700 mt-0.5">{{ project.progress_percentage }}%</p>
+                <p class="text-[11px] text-gray-500 mt-0.5">Stage {{ current_meta.index }} of 6 Completed</p>
+            </div>
+        </div>
+
+        <!-- Progress Bar -->
+        <div class="w-full bg-gray-200 rounded-full h-2.5 mt-5 overflow-hidden">
+            <div class="bg-gradient-to-r from-solar-500 to-emerald-500 h-2.5 rounded-full transition-all duration-500" style="width: {{ project.progress_percentage }}%"></div>
+        </div>
+    </div>
+
+    <!-- Visual 6-Milestone Stepper (Bilingual English & Marathi) -->
+    <div class="glass-card rounded-2xl p-6 space-y-6">
+        <div class="pb-3 border-b border-gray-100 flex items-center justify-between">
+            <h3 class="text-sm font-bold text-gray-900 uppercase tracking-wider">
+                Project Journey & Milestones (प्रकल्पाचे टप्पे)
+            </h3>
+            <span class="text-xs text-gray-400">Company A Turnkey Execution</span>
+        </div>
+
+        <div class="space-y-4">
+            {% for m in milestones %}
+            <div class="flex items-start gap-4 p-3.5 rounded-xl transition duration-150 {% if m.status == 'active' %}bg-solar-50/60 border border-solar-200{% elif m.status == 'completed' %}bg-gray-50/70{% else %}opacity-60{% endif %}">
+                
+                <!-- Stage Number / Status Icon -->
+                <div class="w-9 h-9 rounded-full flex items-center justify-center font-bold text-xs shrink-0 mt-0.5
+                    {% if m.status == 'completed' %}
+                        bg-emerald-500 text-white shadow-xs
+                    {% elif m.status == 'active' %}
+                        bg-solar-500 text-white shadow-sm ring-4 ring-solar-100 pulse-dot
+                    {% else %}
+                        bg-gray-200 text-gray-600
+                    {% endif %}
+                ">
+                    {% if m.status == 'completed' %}
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/>
+                    </svg>
+                    {% else %}
+                    {{ m.meta.index }}
+                    {% endif %}
+                </div>
+
+                <!-- Milestone Content -->
+                <div class="flex-1 min-w-0">
+                    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-1">
+                        <div>
+                            <p class="text-sm font-bold text-gray-900">
+                                {{ m.meta.title_en }}
+                            </p>
+                            <p class="text-xs font-medium text-solar-800">
+                                {{ m.meta.title_mr }}
+                            </p>
+                        </div>
+                        <span class="text-xs font-semibold px-2 py-0.5 rounded-full inline-block sm:text-right
+                            {% if m.status == 'completed' %}
+                                bg-emerald-100 text-emerald-800
+                            {% elif m.status == 'active' %}
+                                bg-solar-100 text-solar-800
+                            {% else %}
+                                bg-gray-100 text-gray-500
+                            {% endif %}
+                        ">
+                            {% if m.status == 'completed' %}Completed (पूर्ण){% elif m.status == 'active' %}In Progress (सध्या सुरू){% else %}Upcoming{% endif %}
+                        </span>
+                    </div>
+
+                    <p class="text-xs text-gray-600 mt-1 leading-relaxed">
+                        {{ m.meta.description }}
+                    </p>
+
+                    {% if m.status == 'active' %}
+                    <div class="mt-2.5 p-2.5 rounded-lg bg-white border border-solar-200 text-xs text-gray-700 flex items-center gap-2">
+                        <span class="w-2 h-2 rounded-full bg-solar-500"></span>
+                        <span class="font-medium text-gray-900">Next Action:</span>
+                        <span>{{ m.meta.action_required }}</span>
+                    </div>
+                    {% endif %}
+                </div>
+
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+
+    <!-- System Specs & Project Snapshot -->
+    <div class="grid grid-cols-2 sm:grid-cols-4 gap-4">
+        <div class="glass-card rounded-xl p-4 text-center">
+            <p class="text-[10px] uppercase font-bold text-gray-400">System Capacity</p>
+            <p class="text-xl font-extrabold text-gray-900 mt-1">{{ quote.system_size_kw if quote else 3.0 }} kW</p>
+            <p class="text-[10px] text-gray-500">Mono PERC Half-Cut</p>
+        </div>
+
+        <div class="glass-card rounded-xl p-4 text-center">
+            <p class="text-[10px] uppercase font-bold text-solar-700">Net Investment</p>
+            <p class="text-xl font-extrabold text-solar-800 mt-1">₹{{ "{:,.0f}".format(quote.net_cost_rs) if quote else '102,000' }}</p>
+            <p class="text-[10px] text-gray-500">Turnkey Installed</p>
+        </div>
+
+        <div class="glass-card rounded-xl p-4 text-center">
+            <p class="text-[10px] uppercase font-bold text-emerald-600">Central Subsidy</p>
+            <p class="text-xl font-extrabold text-emerald-700 mt-1">₹{{ "{:,.0f}".format(quote.subsidy_amount_rs) if quote else '78,000' }}</p>
+            <p class="text-[10px] text-emerald-600 font-medium">PM Surya Ghar DBT</p>
+        </div>
+
+        <div class="glass-card rounded-xl p-4 text-center">
+            <p class="text-[10px] uppercase font-bold text-gray-400">Annual Output</p>
+            <p class="text-xl font-extrabold text-gray-900 mt-1">{{ "{:,}".format(quote.yearly_generation_kwh) if quote else '4,200' }}</p>
+            <p class="text-[10px] text-gray-500">Units (kWh) / year</p>
+        </div>
+    </div>
+
+    <!-- Two-Column: Project Documents & Customer Notification Log -->
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 items-start">
+
+        <!-- Left: Uploaded Documents -->
+        <div class="glass-card rounded-2xl p-6 space-y-4">
+            <div class="flex items-center justify-between pb-3 border-b border-gray-100">
+                <h3 class="text-sm font-bold text-gray-900 uppercase tracking-wider">
+                    Project Documents (कागदपत्रे)
+                </h3>
+                <span class="text-xs text-gray-400">{{ documents | length }} Files</span>
+            </div>
+
+            {% if documents %}
+            <div class="space-y-2.5">
+                {% for doc in documents %}
+                <div class="p-3 rounded-xl border border-gray-100 bg-gray-50/70 hover:bg-gray-100/70 transition flex items-center justify-between gap-3 text-xs">
+                    <div class="flex items-center gap-2.5 min-w-0">
+                        <div class="w-8 h-8 rounded-lg bg-solar-100 text-solar-700 flex items-center justify-center shrink-0">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"/>
+                            </svg>
+                        </div>
+                        <div class="min-w-0">
+                            <p class="font-bold text-gray-900 truncate">{{ doc.title }}</p>
+                            <p class="text-[10px] text-gray-500">{{ doc.uploaded_at.strftime('%d %b %Y') }} · {{ doc.file_size_kb }} KB</p>
+                        </div>
+                    </div>
+                    <a href="/{{ doc.file_path }}" target="_blank" class="px-2.5 py-1 bg-white hover:bg-gray-50 text-gray-700 font-semibold border border-gray-200 rounded-md shrink-0 shadow-2xs">
+                        View
+                    </a>
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <p class="text-xs text-gray-400 text-center py-6">
+                Documents will be attached as engineering and DISCOM inspections proceed.
+            </p>
+            {% endif %}
+        </div>
+
+        <!-- Right: Real-time SMS & WhatsApp Alerts Received -->
+        <div class="glass-card rounded-2xl p-6 space-y-4">
+            <div class="flex items-center justify-between pb-3 border-b border-gray-100">
+                <div>
+                    <h3 class="text-sm font-bold text-gray-900 uppercase tracking-wider">
+                        Customer Alerts & Updates
+                    </h3>
+                    <p class="text-[11px] text-gray-400">पाठवलेले संदेश · Dispatched to +91 {{ lead.phone }}</p>
+                </div>
+                <span class="text-xs text-emerald-700 font-semibold flex items-center gap-1 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200">
+                    <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 pulse-dot"></span>
+                    Live Dispatch
+                </span>
+            </div>
+
+            {% if notifications %}
+            <div class="space-y-3">
+                {% for n in notifications %}
+                <div class="p-3.5 rounded-xl border border-gray-100 bg-gradient-to-br from-white to-gray-50/80 shadow-2xs space-y-2 text-xs">
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center gap-1.5">
+                            {% if n.channel == 'whatsapp' %}
+                            <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-800 border border-emerald-200">
+                                <svg class="w-3 h-3 text-emerald-600 fill-current" viewBox="0 0 24 24"><path d="M12.031 2C6.516 2 2.028 6.488 2.028 12.003c0 1.839.497 3.633 1.442 5.213L2 22.003l4.908-1.423c1.528.887 3.267 1.373 5.123 1.373 5.516 0 10.003-4.488 10.003-10.003C22.034 6.488 17.547 2 12.031 2zm0 18.286c-1.637 0-3.235-.453-4.63-1.312l-.332-.206-2.909.843.844-2.836-.226-.346a8.23 8.23 0 01-1.309-4.426c0-4.57 3.718-8.288 8.288-8.288 4.57 0 8.288 3.718 8.288 8.288 0 4.57-3.718 8.288-8.288 8.288z"/></svg>
+                                WhatsApp Alert
+                            </span>
+                            {% else %}
+                            <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-blue-50 text-blue-800 border border-blue-200">
+                                SMS Alert
+                            </span>
+                            {% endif %}
+                            <span class="text-[10px] text-gray-400">{{ n.sent_at.strftime('%d %b %Y, %I:%M %p') }}</span>
+                        </div>
+                        <span class="inline-flex items-center gap-0.5 text-[10px] font-bold text-emerald-700 bg-emerald-50 px-1.5 py-0.5 rounded-md border border-emerald-200/50">
+                            <span class="text-sky-500 font-bold">✓✓</span>
+                            Delivered
+                        </span>
+                    </div>
+
+                    <!-- Milestone Title & Summary -->
+                    <div class="p-2.5 rounded-lg bg-emerald-50/40 border border-emerald-100 space-y-1">
+                        <div class="flex items-center justify-between">
+                            <p class="font-bold text-gray-900 text-xs">
+                                📍 {{ stage_metadata[n.stage].title_en }}
+                            </p>
+                            <span class="text-[10px] font-medium text-solar-800">
+                                {{ stage_metadata[n.stage].title_mr }}
+                            </span>
+                        </div>
+                        <p class="text-[11px] text-gray-600 line-clamp-2 leading-relaxed">
+                            {{ stage_metadata[n.stage].description }}
+                        </p>
+                    </div>
+
+                    <!-- Action Bar -->
+                    <div class="flex items-center justify-between pt-1">
+                        <span class="text-[10px] text-gray-400 truncate max-w-[200px]">Next: {{ stage_metadata[n.stage].action_required }}</span>
+                        <button type="button" onclick="openWhatsAppModal({{ n.id }})" class="px-2.5 py-1 bg-white hover:bg-emerald-50 text-emerald-800 text-[11px] font-bold rounded-lg border border-gray-200 hover:border-emerald-300 transition shadow-2xs flex items-center gap-1.5 shrink-0">
+                            <svg class="w-3 h-3 text-emerald-600 fill-current" viewBox="0 0 24 24"><path d="M12.031 2C6.516 2 2.028 6.488 2.028 12.003c0 1.839.497 3.633 1.442 5.213L2 22.003l4.908-1.423c1.528.887 3.267 1.373 5.123 1.373 5.516 0 10.003-4.488 10.003-10.003C22.034 6.488 17.547 2 12.031 2zm0 18.286c-1.637 0-3.235-.453-4.63-1.312l-.332-.206-2.909.843.844-2.836-.226-.346a8.23 8.23 0 01-1.309-4.426c0-4.57 3.718-8.288 8.288-8.288 4.57 0 8.288 3.718 8.288 8.288 0 4.57-3.718 8.288-8.288 8.288z"/></svg>
+                            View WhatsApp Message
+                        </button>
+                    </div>
+
+                    <!-- Hidden storage for modal -->
+                    <textarea id="raw-msg-{{ n.id }}" class="hidden">{{ n.message_text }}</textarea>
+                    <span id="date-msg-{{ n.id }}" class="hidden">{{ n.sent_at.strftime('%A, %d %B %Y') }}</span>
+                    <span id="time-msg-{{ n.id }}" class="hidden">{{ n.sent_at.strftime('%I:%M %p') }}</span>
+                    <span id="phone-msg-{{ n.id }}" class="hidden">{{ n.recipient_phone }}</span>
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <p class="text-xs text-gray-400 text-center py-6">
+                Milestone notification alerts sent to +91 {{ lead.phone }} will be mirrored here.
+            </p>
+            {% endif %}
+        </div>
+
+    </div>
+
+    <!-- Assigned Technical Team & Contact -->
+    <div class="glass-card rounded-2xl p-6 bg-gradient-to-r from-white via-white to-amber-50/40">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div class="flex items-center gap-4">
+                <div class="w-12 h-12 rounded-full bg-solar-100 text-solar-700 flex items-center justify-center font-bold text-base shrink-0">
+                    SP
+                </div>
+                <div>
+                    <p class="text-xs font-semibold text-gray-400 uppercase tracking-wider">Assigned Technical Lead</p>
+                    <h4 class="text-base font-bold text-gray-900">{{ project.assigned_engineer }}</h4>
+                    <p class="text-xs text-gray-500">Company A Nagpur Regional Operations · Ph: +91 {{ project.installer_phone }}</p>
+                </div>
+            </div>
+
+            <div class="flex items-center gap-3">
+                <a href="tel:{{ project.installer_phone }}" class="px-4 py-2 bg-white hover:bg-gray-50 text-gray-800 text-xs font-semibold rounded-xl border border-gray-200 transition shadow-xs flex items-center gap-1.5">
+                    <svg class="w-4 h-4 text-solar-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"/>
+                    </svg>
+                    Call Engineer
+                </a>
+                <a href="https://wa.me/91{{ project.installer_phone }}" target="_blank" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-xl transition shadow-xs flex items-center gap-1.5">
+                    <span>WhatsApp Support</span>
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <div class="text-center py-4 border-t border-gray-100 text-xs text-gray-400 space-y-1">
+        <p>Company A — Rooftop Solar Installations · Nagpur, Maharashtra · Over 120 installations/month</p>
+        <p>Personal data and consumer details protected under the Digital Personal Data Protection Act 2023.</p>
+    </div>
+
+</div>
+
+<!-- WhatsApp Chat Preview Modal -->
+<div id="whatsappModal" class="fixed inset-0 z-50 hidden bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl shadow-2xl max-w-md w-full overflow-hidden border border-gray-200 transform transition-all">
+        <!-- WhatsApp Header -->
+        <div class="bg-[#075e54] text-white px-4 py-3 flex items-center justify-between">
+            <div class="flex items-center gap-3">
+                <button type="button" onclick="closeWhatsAppModal()" class="text-white hover:text-gray-200 p-1">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
+                </button>
+                <div class="relative">
+                    <div class="w-10 h-10 rounded-full bg-emerald-800 flex items-center justify-center font-bold text-white text-base">
+                        ☀️
+                    </div>
+                    <span class="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 bg-emerald-400 border-2 border-[#075e54] rounded-full"></span>
+                </div>
+                <div>
+                    <div class="flex items-center gap-1.5">
+                        <span class="font-bold text-sm leading-tight">SolarSync · Company A</span>
+                        <svg class="w-3.5 h-3.5 text-emerald-300 fill-current" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M6.267 3.455a3.066 3.066 0 001.745-.723 3.066 3.066 0 013.976 0 3.066 3.066 0 001.745.723 3.066 3.066 0 012.812 2.812c.051.643.304 1.254.723 1.745a3.066 3.066 0 010 3.976 3.066 3.066 0 00-.723 1.745 3.066 3.066 0 01-2.812 2.812 3.066 3.066 0 00-1.745.723 3.066 3.066 0 01-3.976 0 3.066 3.066 0 00-1.745-.723 3.066 3.066 0 01-2.812-2.812 3.066 3.066 0 00-.723-1.745 3.066 3.066 0 010-3.976 3.066 3.066 0 00.723-1.745 3.066 3.066 0 012.812-2.812zm7.44 5.252a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/></svg>
+                    </div>
+                    <p class="text-[11px] text-emerald-200">Official Business Account · online</p>
+                </div>
+            </div>
+            <button type="button" onclick="closeWhatsAppModal()" class="text-emerald-200 hover:text-white p-1 rounded-lg">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+            </button>
+        </div>
+
+        <!-- WhatsApp Chat Body -->
+        <div class="p-4 space-y-3 bg-[#efeae2] min-h-[280px] max-h-[440px] overflow-y-auto">
+            <div class="text-center">
+                <span id="modalDate" class="inline-block px-3 py-1 bg-white/80 backdrop-blur-xs text-[11px] font-semibold text-gray-600 rounded-md shadow-2xs uppercase tracking-wider">
+                    TODAY
+                </span>
+            </div>
+
+            <!-- WhatsApp Message Bubble -->
+            <div class="flex justify-start">
+                <div class="relative bg-white rounded-2xl rounded-tl-xs p-3.5 shadow-xs max-w-[94%] border border-gray-100 text-xs text-gray-800 space-y-2">
+                    <div id="modalMessageContent" class="leading-relaxed">
+                        <!-- Filled by JS -->
+                    </div>
+                    <div class="flex items-center justify-end gap-1 pt-1 text-[10px] text-gray-400">
+                        <span id="modalTimestamp">14:30</span>
+                        <span class="text-sky-500 font-bold">✓✓</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Modal Actions Bar -->
+        <div class="p-3 bg-gray-50 border-t border-gray-200 flex items-center justify-between gap-2">
+            <button type="button" id="copyMessageBtn" onclick="copyModalMessage()" class="px-3 py-2 bg-white hover:bg-gray-100 text-gray-700 font-semibold text-xs rounded-xl border border-gray-300 transition flex items-center gap-1.5 shadow-2xs">
+                <svg class="w-3.5 h-3.5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"/></svg>
+                <span id="copyBtnText">Copy Text</span>
+            </button>
+            <div class="flex items-center gap-2">
+                <button type="button" onclick="closeWhatsAppModal()" class="px-4 py-2 bg-gray-200 hover:bg-gray-300 text-gray-700 font-semibold text-xs rounded-xl transition">
+                    Close
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function formatWhatsAppText(raw) {
+    if (!raw) return '';
+    let text = raw
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;");
+    text = text.replace(/\*([^\*]+)\*/g, '<strong class="font-bold text-gray-900">$1</strong>');
+    text = text.replace(/_([^_]+)_/g, '<em class="italic">$1</em>');
+    text = text.replace(/~([^~]+)~/g, '<del class="line-through">$1</del>');
+    text = text.replace(/(https?:\/\/[^\s<]+)/g, '<a href="$1" target="_blank" class="text-emerald-700 underline font-semibold hover:text-emerald-900 break-all inline-block my-1 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">$1</a>');
+    text = text.replace(/\n/g, '<br>');
+    return text;
+}
+
+let activeNotificationText = '';
+
+function openWhatsAppModal(id) {
+    const rawElem = document.getElementById('raw-msg-' + id);
+    const dateElem = document.getElementById('date-msg-' + id);
+    const timeElem = document.getElementById('time-msg-' + id);
+
+    if (!rawElem) return;
+
+    activeNotificationText = rawElem.value || rawElem.textContent;
+    document.getElementById('modalMessageContent').innerHTML = formatWhatsAppText(activeNotificationText);
+    if (dateElem) document.getElementById('modalDate').textContent = dateElem.textContent;
+    if (timeElem) document.getElementById('modalTimestamp').textContent = timeElem.textContent;
+
+    const copyText = document.getElementById('copyBtnText');
+    if (copyText) copyText.textContent = 'Copy Text';
+
+    const modal = document.getElementById('whatsappModal');
+    modal.classList.remove('hidden');
+    document.body.style.overflow = 'hidden';
+}
+
+function closeWhatsAppModal() {
+    const modal = document.getElementById('whatsappModal');
+    modal.classList.add('hidden');
+    document.body.style.overflow = '';
+}
+
+function copyModalMessage() {
+    if (!activeNotificationText) return;
+    navigator.clipboard.writeText(activeNotificationText).then(() => {
+        const copyText = document.getElementById('copyBtnText');
+        if (copyText) {
+            copyText.textContent = '✓ Copied!';
+            setTimeout(() => { copyText.textContent = 'Copy Text'; }, 2000);
+        }
+    });
+}
+
+document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') closeWhatsAppModal();
+});
+document.getElementById('whatsappModal')?.addEventListener('click', (e) => {
+    if (e.target.id === 'whatsappModal') closeWhatsAppModal();
+});
+</script>
+{% endblock %}
