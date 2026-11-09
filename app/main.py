@@ -63,6 +63,17 @@ app.include_router(projects.router)
 app.include_router(admin.router)
 
 
+@app.get("/health", tags=["System"])
+async def health_check():
+    """Health check endpoint for AWS ALB, App Runner, ECS, and container probes."""
+    return {
+        "status": "healthy",
+        "service": "SolarSync",
+        "version": "1.0.0",
+        "environment": "production" if not settings.DEBUG else "development",
+    }
+
+
 @app.get("/")
 async def root():
     """Redirect root to dashboard (or login if not authenticated)."""

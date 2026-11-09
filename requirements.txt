@@ -1,6 +1,7 @@
 # FastAPI & Server
 fastapi
 uvicorn[standard]
+gunicorn
 python-multipart
 
 # Templates
