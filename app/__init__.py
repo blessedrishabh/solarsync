@@ -1,0 +1,1 @@
+"""SolarSync application package."""

@@ -1,0 +1,285 @@
+{% extends "layouts/base.html" %}
+
+{% block head %}
+<style>
+    .glass-card {
+        background: white;
+        border: 1px solid #e5e7eb;
+        box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.05);
+    }
+</style>
+{% endblock %}
+
+{% block nav %}
+<nav class="bg-white border-b border-gray-100">
+    <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="flex items-center justify-between h-16">
+            <div class="flex items-center space-x-3">
+                <a href="/dashboard" class="flex items-center space-x-3">
+                    <div class="w-9 h-9 rounded-xl bg-solar-500 flex items-center justify-center">
+                        <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"/>
+                        </svg>
+                    </div>
+                    <span class="text-lg font-semibold text-gray-900">SolarSync</span>
+                </a>
+                <span class="text-xs bg-solar-50 text-solar-700 font-medium px-2 py-0.5 rounded-full border border-solar-200">Company A · Nagpur</span>
+            </div>
+
+            <div class="flex items-center space-x-3">
+                {% if user and user.role.value in ['sales', 'admin'] %}
+                <a href="/leads/{{ lead.lead_id }}" class="text-xs font-medium text-gray-600 hover:text-gray-900 px-3 py-1.5 rounded-lg border border-gray-200 hover:bg-gray-50 transition">
+                    ← Back to Lead
+                </a>
+                <a href="/quotes" class="text-xs font-medium text-gray-600 hover:text-gray-900 px-3 py-1.5 rounded-lg border border-gray-200 hover:bg-gray-50 transition">
+                    All Quotes
+                </a>
+                {% endif %}
+                <a href="/quotes/{{ quote.quote_number }}/pdf" target="_blank" class="text-xs font-medium bg-solar-500 hover:bg-solar-600 text-white px-3.5 py-1.5 rounded-lg transition shadow-sm flex items-center gap-1.5">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/>
+                    </svg>
+                    Download PDF
+                </a>
+            </div>
+        </div>
+    </div>
+</nav>
+{% endblock %}
+
+{% block content %}
+<div class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-10 space-y-10">
+
+    <!-- Proposal Header -->
+    <div class="text-center space-y-2">
+        <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-amber-50 border border-amber-200 text-solar-800 text-xs font-semibold uppercase tracking-wider">
+            <span>Rooftop Solar Proposal</span>
+            <span>·</span>
+            <span>{{ quote.quote_number }}</span>
+        </div>
+        <h1 class="text-3xl sm:text-4xl font-extrabold text-gray-900 tracking-tight">
+            Solar Investment Plan for {{ lead.name }}
+        </h1>
+        <p class="text-sm text-gray-500 max-w-xl mx-auto">
+            Custom engineered for your property in PIN {{ lead.pincode }}, Vidarbha. Includes turnkey installation, PM Surya Ghar central subsidy liaison, and net-metering.
+        </p>
+        
+        {% if quote.status == 'accepted' %}
+        <div class="inline-flex flex-wrap items-center justify-center gap-2 mt-2">
+            <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-100 text-emerald-800 text-xs font-bold">
+                <svg class="w-4 h-4 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+                </svg>
+                Proposal Accepted · Technical Site Survey Scheduled
+            </span>
+            {% if project %}
+            <a href="/track/{{ project.public_token }}" class="text-xs font-bold bg-solar-500 hover:bg-solar-600 text-white px-3.5 py-1 rounded-full transition shadow-xs flex items-center gap-1">
+                <span>View Live Project Tracker</span>
+                <span>→</span>
+            </a>
+            {% endif %}
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- The Solar Story (Hero Numbers: Size -> Cost After Subsidy -> Payback) -->
+    <!-- Designed strictly with minimal aesthetics, high white space, clear type -->
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+        
+        <!-- Story Hero 1: System Size -->
+        <div class="glass-card rounded-2xl p-7 text-center space-y-2 hover:border-solar-300 transition shadow-sm">
+            <p class="text-xs font-bold uppercase tracking-widest text-gray-400">1. System Capacity</p>
+            <div class="py-2">
+                <span class="text-4xl sm:text-5xl font-black text-gray-900 tracking-tight">{{ quote.system_size_kw }}</span>
+                <span class="text-xl font-bold text-gray-500">kW</span>
+            </div>
+            <p class="text-xs text-gray-600 leading-relaxed">
+                Generates <span class="font-semibold text-gray-900">{{ "{:,}".format(quote.yearly_generation_kwh) }} units/yr</span> (~{{ monthly_gen }} units/mo), covering your household electricity needs.
+            </p>
+            <span class="inline-block text-[11px] font-medium text-emerald-700 bg-emerald-50 px-2.5 py-0.5 rounded-full border border-emerald-100">
+                1,400 kWh/kW/yr Vidarbha Standard
+            </span>
+        </div>
+
+        <!-- Story Hero 2: Net Cost After Subsidy -->
+        <div class="glass-card rounded-2xl p-7 text-center space-y-2 border-2 border-solar-400 bg-gradient-to-b from-white to-amber-50/30 hover:border-solar-500 transition shadow-md">
+            <p class="text-xs font-bold uppercase tracking-widest text-solar-700">2. Net Investment</p>
+            <div class="py-2">
+                <span class="text-4xl sm:text-5xl font-black text-solar-800 tracking-tight">₹{{ "{:,.0f}".format(quote.net_cost_rs) }}</span>
+            </div>
+            <p class="text-xs text-gray-600 leading-relaxed">
+                Gross ₹{{ "{:,.0f}".format(quote.gross_cost_rs) }} minus <span class="font-bold text-emerald-700">₹{{ "{:,.0f}".format(quote.subsidy_amount_rs) }}</span> direct central government subsidy.
+            </p>
+            <span class="inline-block text-[11px] font-bold text-solar-800 bg-solar-100 px-2.5 py-0.5 rounded-full">
+                Direct Benefit Transfer (DBT) to Bank
+            </span>
+        </div>
+
+        <!-- Story Hero 3: Payback Period -->
+        <div class="glass-card rounded-2xl p-7 text-center space-y-2 hover:border-emerald-300 transition shadow-sm">
+            <p class="text-xs font-bold uppercase tracking-widest text-gray-400">3. Payback Period</p>
+            <div class="py-2">
+                <span class="text-4xl sm:text-5xl font-black text-emerald-700 tracking-tight">{{ quote.payback_years }}</span>
+                <span class="text-xl font-bold text-gray-500">Years</span>
+            </div>
+            <p class="text-xs text-gray-600 leading-relaxed">
+                Saves <span class="font-semibold text-gray-900">₹{{ "{:,.0f}".format(quote.yearly_savings_rs) }}/yr</span> on utility bills. Capital recovered in ~{{ (quote.payback_years * 12) | round | int }} months!
+            </p>
+            <span class="inline-block text-[11px] font-medium text-emerald-700 bg-emerald-50 px-2.5 py-0.5 rounded-full border border-emerald-100">
+                25-Year Guaranteed Generation
+            </span>
+        </div>
+
+    </div>
+
+    <!-- Proposal Action Callout -->
+    {% if quote.status != 'accepted' %}
+    <div class="glass-card rounded-2xl p-6 bg-gradient-to-r from-solar-50 via-amber-50 to-white border border-solar-200">
+        <div class="flex flex-col md:flex-row items-center justify-between gap-4">
+            <div class="space-y-1 text-center md:text-left">
+                <h3 class="text-base font-bold text-gray-900">Ready to switch to solar?</h3>
+                <p class="text-xs text-gray-600">Lock in your PM Surya Ghar central subsidy reservation and schedule a technical site survey.</p>
+            </div>
+            <div class="flex items-center gap-3">
+                <form action="/quotes/{{ quote.quote_number }}/accept" method="POST">
+                    <button type="submit" class="px-5 py-2.5 bg-solar-500 hover:bg-solar-600 text-white text-xs font-bold rounded-xl transition shadow-sm flex items-center gap-2">
+                        <span>Accept Proposal & Book Site Survey</span>
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"/>
+                        </svg>
+                    </button>
+                </form>
+                <a href="/quotes/{{ quote.quote_number }}/pdf" target="_blank" class="px-4 py-2.5 bg-white hover:bg-gray-50 text-gray-700 border border-gray-300 text-xs font-semibold rounded-xl transition">
+                    View PDF
+                </a>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Turnkey Financial & Subsidy Breakdown -->
+    <div class="glass-card rounded-2xl overflow-hidden">
+        <div class="px-6 py-4 bg-gray-50 border-b border-gray-100 flex items-center justify-between">
+            <h2 class="text-sm font-bold text-gray-900 uppercase tracking-wider">Financial Breakdown & Subsidy Scheme</h2>
+            <span class="text-xs text-gray-500">{{ subsidy_rule.scheme_name }}</span>
+        </div>
+        <div class="divide-y divide-gray-100">
+            <div class="p-6 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                <div>
+                    <h3 class="text-sm font-semibold text-gray-900">Turnkey System Cost (Gross)</h3>
+                    <p class="text-xs text-gray-500">{{ quote.system_size_kw }} kW × ₹{{ "{:,.0f}".format(pricing_rule.base_cost_per_kw) }}/kW (All inclusive: Panels, Inverter, GI Structure, Net Metering)</p>
+                </div>
+                <span class="text-base font-bold text-gray-900">₹{{ "{:,.2f}".format(quote.gross_cost_rs) }}</span>
+            </div>
+
+            <div class="p-6 flex flex-col sm:flex-row sm:items-center justify-between gap-2 bg-emerald-50/40">
+                <div>
+                    <div class="flex items-center gap-2">
+                        <h3 class="text-sm font-bold text-emerald-800">PM Surya Ghar: Central Residential Subsidy</h3>
+                        <span class="text-[10px] font-semibold bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded-full">DBT Direct Credit</span>
+                    </div>
+                    <p class="text-xs text-emerald-700 mt-0.5">
+                        ₹30,000/kW up to 2 kW + ₹18,000 for 3rd kW (Dated rule effective {{ subsidy_rule.effective_from.strftime('%d-%b-%Y') }})
+                    </p>
+                </div>
+                <span class="text-base font-extrabold text-emerald-700">- ₹{{ "{:,.2f}".format(quote.subsidy_amount_rs) }}</span>
+            </div>
+
+            <div class="p-6 flex flex-col sm:flex-row sm:items-center justify-between gap-2 bg-amber-50/30">
+                <div>
+                    <h3 class="text-base font-bold text-gray-900">Total Net Investment</h3>
+                    <p class="text-xs text-gray-500">Final out-of-pocket investment after direct central subsidy receipt</p>
+                </div>
+                <span class="text-2xl font-black text-solar-800">₹{{ "{:,.2f}".format(quote.net_cost_rs) }}</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Energy Generation & 25-Year Lifecycle Return -->
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        
+        <!-- Energy Production Story -->
+        <div class="glass-card rounded-2xl p-6 space-y-4">
+            <h3 class="text-sm font-bold text-gray-900 uppercase tracking-wider">Annual Energy Production</h3>
+            
+            <div class="space-y-3 text-sm">
+                <div class="flex justify-between items-center py-2 border-b border-gray-100">
+                    <span class="text-gray-600">Company A Generation Factor</span>
+                    <span class="font-bold text-gray-900">{{ "{:,.0f}".format(pricing_rule.generation_factor_kwh_per_kw) }} units / kW / yr</span>
+                </div>
+                <div class="flex justify-between items-center py-2 border-b border-gray-100">
+                    <span class="text-gray-600">Expected Annual Generation</span>
+                    <span class="font-bold text-gray-900">{{ "{:,}".format(quote.yearly_generation_kwh) }} units (kWh)</span>
+                </div>
+                <div class="flex justify-between items-center py-2 border-b border-gray-100">
+                    <span class="text-gray-600">Expected Monthly Generation</span>
+                    <span class="font-bold text-gray-900">~{{ monthly_gen }} units / month</span>
+                </div>
+                <div class="flex justify-between items-center py-2">
+                    <span class="text-gray-600">MSEDCL Residential Tariff</span>
+                    <span class="font-bold text-gray-900">₹{{ "{:.2f}".format(pricing_rule.tariff_per_kwh_rs) }} / unit</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- 25-Year Financial Return -->
+        <div class="glass-card rounded-2xl p-6 space-y-4">
+            <h3 class="text-sm font-bold text-gray-900 uppercase tracking-wider">25-Year Financial Return</h3>
+            
+            <div class="space-y-3 text-sm">
+                <div class="flex justify-between items-center py-2 border-b border-gray-100">
+                    <span class="text-gray-600">Yearly Utility Bill Savings</span>
+                    <span class="font-bold text-gray-900">₹{{ "{:,.0f}".format(quote.yearly_savings_rs) }} / year</span>
+                </div>
+                <div class="flex justify-between items-center py-2 border-b border-gray-100">
+                    <span class="text-gray-600">Monthly Utility Bill Savings</span>
+                    <span class="font-bold text-gray-900">~₹{{ "{:,.0f}".format(monthly_savings) }} / month</span>
+                </div>
+                <div class="flex justify-between items-center py-2 border-b border-gray-100">
+                    <span class="text-gray-600">Payback Period</span>
+                    <span class="font-extrabold text-emerald-700">{{ quote.payback_years }} Years</span>
+                </div>
+                <div class="flex justify-between items-center py-2">
+                    <span class="text-gray-600 font-semibold">25-Year Cumulative Net Profit</span>
+                    <span class="font-black text-emerald-700 text-base">₹{{ "{:,.0f}".format(quote.lifetime_savings_25yr_rs) }}</span>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- Premium Equipment & Warranties -->
+    <div class="glass-card rounded-2xl p-6 space-y-4">
+        <h3 class="text-sm font-bold text-gray-900 uppercase tracking-wider">Turnkey Inclusions & Warranties</h3>
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 text-xs">
+            <div class="p-4 rounded-xl bg-gray-50 space-y-1">
+                <p class="font-bold text-gray-900">Solar PV Modules</p>
+                <p class="text-gray-600">{{ quote.panel_specs }}</p>
+                <p class="text-emerald-700 font-medium">25-Year Performance Warranty</p>
+            </div>
+            <div class="p-4 rounded-xl bg-gray-50 space-y-1">
+                <p class="font-bold text-gray-900">String Inverter</p>
+                <p class="text-gray-600">{{ quote.inverter_specs }}</p>
+                <p class="text-emerald-700 font-medium">5-Year Replacement Warranty</p>
+            </div>
+            <div class="p-4 rounded-xl bg-gray-50 space-y-1">
+                <p class="font-bold text-gray-900">Mounting Structure</p>
+                <p class="text-gray-600">Hot-dip Galvanized Iron (GI) elevated mounting structure</p>
+                <p class="text-emerald-700 font-medium">Engineered for Vidarbha winds</p>
+            </div>
+            <div class="p-4 rounded-xl bg-gray-50 space-y-1">
+                <p class="font-bold text-gray-900">Net Metering & Discom</p>
+                <p class="text-gray-600">End-to-end MSEDCL liaison, testing & commissioning</p>
+                <p class="text-emerald-700 font-medium">100% Hassle-Free Filing</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- DPDP Compliance Footer -->
+    <div class="text-center py-4 border-t border-gray-200 text-xs text-gray-400 space-y-1">
+        <p>Company A — Rooftop Solar Installations · Nagpur, Maharashtra · Over 120 installations/month</p>
+        <p>Personal electricity bill details and consumer numbers protected in compliance with the Digital Personal Data Protection Act 2023.</p>
+    </div>
+
+</div>
+{% endblock %}

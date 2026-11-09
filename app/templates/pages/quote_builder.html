@@ -1,0 +1,394 @@
+{% extends "layouts/base.html" %}
+
+{% block head %}
+<style>
+    .glass-card {
+        background: white;
+        border: 1px solid #e5e7eb;
+        box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.05);
+    }
+</style>
+{% endblock %}
+
+{% block nav %}
+<nav class="bg-white border-b border-gray-100">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="flex items-center justify-between h-16">
+            <div class="flex items-center space-x-3">
+                <a href="/dashboard" class="flex items-center space-x-3">
+                    <div class="w-9 h-9 rounded-xl bg-solar-500 flex items-center justify-center">
+                        <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"/>
+                        </svg>
+                    </div>
+                    <span class="text-lg font-semibold text-gray-900">SolarSync</span>
+                </a>
+                <span class="text-gray-300">/</span>
+                <a href="/leads/{{ lead.lead_id }}" class="text-sm font-medium text-gray-600 hover:text-gray-900">{{ lead.lead_id }}</a>
+                <span class="text-gray-300">/</span>
+                <span class="text-sm font-medium text-solar-600">Quote Builder</span>
+            </div>
+
+            <div class="hidden md:flex items-center space-x-1">
+                <a href="/dashboard" class="px-3 py-2 rounded-lg text-sm font-medium text-gray-600 hover:text-gray-900 hover:bg-gray-50">Dashboard</a>
+                <a href="/leads" class="px-3 py-2 rounded-lg text-sm font-medium text-gray-600 hover:text-gray-900 hover:bg-gray-50">Leads</a>
+                <a href="/quotes" class="px-3 py-2 rounded-lg text-sm font-medium text-solar-600 bg-solar-50">Quotes</a>
+            </div>
+
+            <div class="flex items-center space-x-3">
+                <div class="text-right hidden sm:block">
+                    <p class="text-xs font-medium text-gray-900">{{ user.name }}</p>
+                    <p class="text-[10px] text-gray-500 capitalize">{{ user.role.value }}</p>
+                </div>
+                <div class="w-8 h-8 rounded-full bg-solar-100 text-solar-700 flex items-center justify-center text-xs font-bold">
+                    {{ user.name[0] | upper }}
+                </div>
+            </div>
+        </div>
+    </div>
+</nav>
+{% endblock %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
+
+    <!-- Customer Context Bar -->
+    <div class="glass-card rounded-xl p-5 bg-gradient-to-r from-white via-white to-amber-50/30">
+        <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+            <div class="flex items-start gap-3">
+                <div class="w-12 h-12 rounded-xl bg-solar-50 text-solar-600 flex items-center justify-center shrink-0 border border-solar-200">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
+                    </svg>
+                </div>
+                <div>
+                    <div class="flex items-center gap-2">
+                        <h1 class="text-lg font-bold text-gray-900">{{ lead.name }}</h1>
+                        <span class="text-xs font-semibold px-2 py-0.5 rounded-full bg-gray-100 text-gray-700 uppercase tracking-wider">{{ lead.lead_id }}</span>
+                        <span class="text-xs font-medium px-2 py-0.5 rounded-full {{ 'bg-emerald-50 text-emerald-700 border border-emerald-200' if lead.ownership.value == 'owner' else 'bg-amber-50 text-amber-700 border border-amber-200' }}">
+                            {{ lead.ownership.value.capitalize() }}
+                        </span>
+                    </div>
+                    <p class="text-xs text-gray-500 mt-1">
+                        +91 {{ lead.phone }} · PIN {{ lead.pincode }}, Vidarbha · Roof: {{ lead.roof_type.value.replace('_', ' ').title() }} ({{ lead.roof_area_sqft | round }} sq.ft)
+                    </p>
+                </div>
+            </div>
+
+            <!-- Key Metrics from AI Bill Reading / Lead form -->
+            <div class="flex items-center gap-6 text-sm border-t lg:border-t-0 pt-3 lg:pt-0 border-gray-100">
+                <div>
+                    <p class="text-[11px] text-gray-400 font-medium uppercase">Monthly Bill</p>
+                    <p class="text-base font-bold text-gray-900">₹{{ "{:,}".format(lead.monthly_bill_rs) if lead.monthly_bill_rs else '—' }}</p>
+                </div>
+                {% if reading and reading.monthly_units %}
+                <div>
+                    <p class="text-[11px] text-gray-400 font-medium uppercase">Extracted Units</p>
+                    <p class="text-base font-bold text-gray-900">{{ reading.monthly_units }} <span class="text-xs font-normal text-gray-500">kWh/mo</span></p>
+                </div>
+                {% endif %}
+                {% if reading and reading.sanctioned_load_kw %}
+                <div>
+                    <p class="text-[11px] text-gray-400 font-medium uppercase">Sanctioned Load</p>
+                    <p class="text-base font-bold text-gray-900">{{ reading.sanctioned_load_kw }} <span class="text-xs font-normal text-gray-500">kW</span></p>
+                </div>
+                {% endif %}
+                <div class="bg-emerald-50 px-3 py-1.5 rounded-lg border border-emerald-200 text-center">
+                    <p class="text-[10px] text-emerald-700 font-bold uppercase tracking-wider">AI Recommended</p>
+                    <p class="text-base font-extrabold text-emerald-800">{{ recommended_kw }} kW</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Two-Column Quote Builder Form -->
+    <form action="/leads/{{ lead.lead_id }}/quote/new" method="POST" id="quote-form">
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+
+            <!-- Left Column: Configuration Controls (7 Cols) -->
+            <div class="lg:col-span-7 space-y-6">
+
+                <!-- 1. System Capacity Selection Card -->
+                <div class="glass-card rounded-xl p-6 space-y-5">
+                    <div class="flex items-center justify-between pb-3 border-b border-gray-100">
+                        <div>
+                            <h2 class="text-base font-bold text-gray-900">1. Select System Capacity</h2>
+                            <p class="text-xs text-gray-500">Pick from common presets or use the fine-tuning slider.</p>
+                        </div>
+                        <span class="text-xs font-semibold px-2.5 py-1 bg-amber-50 text-amber-800 rounded-lg border border-amber-200">
+                            Fixed 1,400 kWh/kW/yr
+                        </span>
+                    </div>
+
+                    <!-- Preset Capacity Buttons -->
+                    <div class="grid grid-cols-4 gap-3">
+                        <button type="button" onclick="setCapacity(2.0)" class="preset-btn py-3 px-2 rounded-xl border text-center transition hover:border-solar-500 hover:bg-solar-50/50" data-kw="2.0">
+                            <span class="block text-lg font-bold text-gray-900">2 kW</span>
+                            <span class="block text-[11px] text-gray-500">₹60,000 Subsidy</span>
+                        </button>
+                        <button type="button" onclick="setCapacity(3.0)" class="preset-btn py-3 px-2 rounded-xl border text-center transition hover:border-solar-500 hover:bg-solar-50/50 relative border-solar-500 bg-solar-50" data-kw="3.0">
+                            <span class="absolute -top-2 left-1/2 -translate-x-1/2 bg-solar-600 text-white text-[9px] font-bold px-1.5 py-0.5 rounded-full">POPULAR</span>
+                            <span class="block text-lg font-bold text-solar-800">3 kW</span>
+                            <span class="block text-[11px] text-solar-700 font-semibold">₹78,000 Max</span>
+                        </button>
+                        <button type="button" onclick="setCapacity(4.0)" class="preset-btn py-3 px-2 rounded-xl border text-center transition hover:border-solar-500 hover:bg-solar-50/50" data-kw="4.0">
+                            <span class="block text-lg font-bold text-gray-900">4 kW</span>
+                            <span class="block text-[11px] text-gray-500">₹78,000 Cap</span>
+                        </button>
+                        <button type="button" onclick="setCapacity(5.0)" class="preset-btn py-3 px-2 rounded-xl border text-center transition hover:border-solar-500 hover:bg-solar-50/50" data-kw="5.0">
+                            <span class="block text-lg font-bold text-gray-900">5 kW</span>
+                            <span class="block text-[11px] text-gray-500">₹78,000 Cap</span>
+                        </button>
+                    </div>
+
+                    <!-- Granular Range Slider -->
+                    <div class="space-y-3 pt-2">
+                        <div class="flex items-center justify-between">
+                            <label class="text-xs font-semibold text-gray-700 uppercase tracking-wider">Granular Adjustment</label>
+                            <div class="flex items-center gap-1">
+                                <input type="number" id="capacity-input" name="system_size_kw" min="1.0" max="10.0" step="0.5" value="{{ recommended_kw }}" class="w-20 text-center font-bold text-base border border-gray-300 rounded-lg py-1 px-2 focus:ring-solar-500 focus:border-solar-500" onchange="syncCapacity(this.value)">
+                                <span class="text-sm font-semibold text-gray-700">kW</span>
+                            </div>
+                        </div>
+                        <input type="range" id="capacity-slider" min="1.0" max="10.0" step="0.5" value="{{ recommended_kw }}" class="w-full h-2.5 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-solar-500" oninput="syncCapacity(this.value)">
+                        <div class="flex justify-between text-[11px] text-gray-400 font-medium">
+                            <span>1 kW (Compact)</span>
+                            <span>3 kW (Sweet Spot)</span>
+                            <span>5 kW</span>
+                            <span>10 kW (Max Resi)</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 2. Hardware & Inclusions Card -->
+                <div class="glass-card rounded-xl p-6 space-y-4">
+                    <div class="pb-3 border-b border-gray-100">
+                        <h2 class="text-base font-bold text-gray-900">2. Technical Hardware & Specifications</h2>
+                        <p class="text-xs text-gray-500">Tier-1 components engineered for Vidarbha high-temperature summers.</p>
+                    </div>
+
+                    <div class="space-y-3">
+                        <div>
+                            <label class="block text-xs font-semibold text-gray-700 mb-1">Solar PV Modules</label>
+                            <select name="panel_specs" class="w-full text-sm border border-gray-300 rounded-lg px-3 py-2 bg-white focus:ring-solar-500 focus:border-solar-500">
+                                <option value="Mono PERC 550W Tier-1 (Half-Cut)" selected>Mono PERC 550W Tier-1 Half-Cut (25-Yr Performance Warranty)</option>
+                                <option value="Bi-Facial 545W N-Type TopCon">Bi-Facial 545W N-Type TopCon (High-Reflectance Reroofing)</option>
+                                <option value="Polycrystalline 335W Standard">Polycrystalline 335W Standard (Budget Option)</option>
+                            </select>
+                        </div>
+
+                        <div>
+                            <label class="block text-xs font-semibold text-gray-700 mb-1">On-Grid String Inverter</label>
+                            <select name="inverter_specs" class="w-full text-sm border border-gray-300 rounded-lg px-3 py-2 bg-white focus:ring-solar-500 focus:border-solar-500">
+                                <option value="High-Efficiency On-Grid String Inverter (IP65)" selected>High-Efficiency On-Grid String Inverter with Dual MPPT (IP65, 5-Yr Warranty)</option>
+                                <option value="Hybrid Solar Inverter (Battery-Ready)">Hybrid Solar Inverter (Battery-Ready for Power Backup)</option>
+                                <option value="Micro-Inverters per Panel">Micro-Inverters per Panel (Zero Shadow Loss)</option>
+                            </select>
+                        </div>
+
+                        <div>
+                            <label class="block text-xs font-semibold text-gray-700 mb-1">Custom Notes / Site Recommendations</label>
+                            <textarea name="notes" rows="2" placeholder="e.g., Elevated 6ft GI structure recommended for terrace utility in Nagpur." class="w-full text-sm border border-gray-300 rounded-lg px-3 py-2 focus:ring-solar-500 focus:border-solar-500"></textarea>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 3. Active Dated Rule Snapshot Information -->
+                <div class="p-4 rounded-xl bg-gray-50 border border-gray-200 text-xs text-gray-600 space-y-1">
+                    <p class="font-semibold text-gray-800">Dated Policy Snapshot:</p>
+                    <p>• Subsidy Rule: <span class="font-medium text-gray-900">{{ subsidy_rule.scheme_name }}</span> (Effective {{ subsidy_rule.effective_from.strftime('%d-%b-%Y') }})</p>
+                    <p>• Turnkey Rate: <span class="font-medium text-gray-900">₹{{ "{:,.0f}".format(pricing_rule.base_cost_per_kw) }}/kW</span> · MSEDCL Tariff: <span class="font-medium text-gray-900">₹{{ "{:.2f}".format(pricing_rule.tariff_per_kwh_rs) }}/unit</span></p>
+                </div>
+
+            </div>
+
+            <!-- Right Column: Real-Time Live Math Preview (5 Cols) -->
+            <div class="lg:col-span-5 sticky top-6 space-y-5">
+                
+                <div class="glass-card rounded-2xl p-6 border-2 border-solar-400 bg-gradient-to-br from-white via-white to-amber-50/40 shadow-md space-y-6">
+                    <div>
+                        <span class="text-[11px] font-bold uppercase tracking-wider text-solar-700 bg-solar-100 px-2 py-0.5 rounded-full">
+                            PROPOSAL SUMMARY
+                        </span>
+                        <h3 class="text-xl font-bold text-gray-900 mt-2">
+                            <span id="preview-kw">{{ recommended_kw }}</span> kW Solar System
+                        </h3>
+                        <p class="text-xs text-gray-500">Pure deterministic calculations from active dated tables.</p>
+                    </div>
+
+                    <!-- Hero Story: Size -> Cost After Subsidy -> Payback -->
+                    <div class="space-y-3 pt-2">
+                        
+                        <!-- Gross Cost -->
+                        <div class="flex items-center justify-between text-sm">
+                            <span class="text-gray-500">Gross Turnkey System Cost</span>
+                            <span id="preview-gross" class="font-semibold text-gray-900">₹{{ "{:,.0f}".format(initial_calc.gross_cost_rs) }}</span>
+                        </div>
+
+                        <!-- Direct Central Subsidy -->
+                        <div class="flex items-center justify-between text-sm">
+                            <span class="text-emerald-700 font-medium">PM Surya Ghar DBT Subsidy</span>
+                            <span id="preview-subsidy" class="font-bold text-emerald-700">- ₹{{ "{:,.0f}".format(initial_calc.subsidy_amount_rs) }}</span>
+                        </div>
+
+                        <!-- Divider -->
+                        <div class="border-t border-amber-200 pt-3"></div>
+
+                        <!-- Net Cost to Customer (Hero 1) -->
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <p class="text-xs font-bold text-gray-900 uppercase">Net Investment</p>
+                                <p class="text-[10px] text-gray-500">Actual cost out-of-pocket</p>
+                            </div>
+                            <span id="preview-net" class="text-2xl font-extrabold text-solar-800">
+                                ₹{{ "{:,.0f}".format(initial_calc.net_cost_rs) }}
+                            </span>
+                        </div>
+
+                        <!-- Payback Period (Hero 2) -->
+                        <div class="flex items-center justify-between p-3 rounded-xl bg-emerald-50 border border-emerald-200">
+                            <div>
+                                <p class="text-xs font-bold text-emerald-900 uppercase">Payback Period</p>
+                                <p class="text-[10px] text-emerald-700">Fully recovered in</p>
+                            </div>
+                            <span id="preview-payback" class="text-xl font-extrabold text-emerald-800">
+                                {{ initial_calc.payback_years }} Years
+                            </span>
+                        </div>
+
+                    </div>
+
+                    <!-- Generation & Utility Savings Breakdown -->
+                    <div class="pt-4 border-t border-gray-100 space-y-2 text-xs">
+                        <div class="flex justify-between text-gray-600">
+                            <span>Yearly Generation (1,400 kWh/kW)</span>
+                            <span id="preview-yearly-gen" class="font-semibold text-gray-900">{{ "{:,}".format(initial_calc.yearly_generation_kwh) }} units/yr</span>
+                        </div>
+                        <div class="flex justify-between text-gray-600">
+                            <span>Monthly Generation</span>
+                            <span id="preview-monthly-gen" class="font-semibold text-gray-900">~{{ initial_calc.monthly_generation_kwh }} units/mo</span>
+                        </div>
+                        <div class="flex justify-between text-gray-600">
+                            <span>Est. Yearly Utility Bill Savings</span>
+                            <span id="preview-yearly-savings" class="font-semibold text-gray-900">₹{{ "{:,.0f}".format(initial_calc.yearly_savings_rs) }}/yr</span>
+                        </div>
+                        <div class="flex justify-between text-gray-600">
+                            <span>Est. Monthly Savings</span>
+                            <span id="preview-monthly-savings" class="font-semibold text-gray-900">₹{{ "{:,.0f}".format(initial_calc.monthly_savings_rs) }}/mo</span>
+                        </div>
+                        <div class="flex justify-between text-emerald-700 font-semibold pt-1">
+                            <span>25-Year Cumulative Net Profit</span>
+                            <span id="preview-lifetime">₹{{ "{:,.0f}".format(initial_calc.lifetime_savings_25yr_rs) }}</span>
+                        </div>
+                    </div>
+
+                    <!-- Submit Button -->
+                    <div class="pt-2">
+                        <button type="submit" class="w-full py-3.5 px-4 bg-solar-500 hover:bg-solar-600 text-white font-bold text-sm rounded-xl transition shadow-md flex items-center justify-center gap-2">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                            </svg>
+                            Generate Official Proposal & PDF
+                        </button>
+                        <p class="text-[11px] text-gray-400 text-center mt-2">
+                            Generates branded proposal page and downloadable PDF quotation.
+                        </p>
+                    </div>
+
+                </div>
+
+            </div>
+
+        </div>
+    </form>
+
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    const BASE_COST = {{ pricing_rule.base_cost_per_kw }};
+    const RATE_UPTO_2 = {{ subsidy_rule.rate_per_kw_upto_2 }};
+    const RATE_3RD = {{ subsidy_rule.rate_for_3rd_kw }};
+    const RATE_ABOVE = {{ subsidy_rule.rate_above_3rd_kw }};
+    const CAP_AMOUNT = {{ subsidy_rule.cap_amount }};
+    const GEN_FACTOR = {{ pricing_rule.generation_factor_kwh_per_kw }};
+    const TARIFF = {{ pricing_rule.tariff_per_kwh_rs }};
+
+    function setCapacity(kw) {
+        document.getElementById('capacity-input').value = kw;
+        document.getElementById('capacity-slider').value = kw;
+        recalculate(kw);
+
+        // Update active preset styling
+        document.querySelectorAll('.preset-btn').forEach(btn => {
+            if (parseFloat(btn.getAttribute('data-kw')) === kw) {
+                btn.classList.add('border-solar-500', 'bg-solar-50');
+            } else {
+                btn.classList.remove('border-solar-500', 'bg-solar-50');
+            }
+        });
+    }
+
+    function syncCapacity(val) {
+        let kw = parseFloat(val);
+        if (isNaN(kw) || kw < 1) kw = 1.0;
+        if (kw > 10) kw = 10.0;
+
+        document.getElementById('capacity-input').value = kw;
+        document.getElementById('capacity-slider').value = kw;
+        recalculate(kw);
+
+        document.querySelectorAll('.preset-btn').forEach(btn => {
+            if (parseFloat(btn.getAttribute('data-kw')) === kw) {
+                btn.classList.add('border-solar-500', 'bg-solar-50');
+            } else {
+                btn.classList.remove('border-solar-500', 'bg-solar-50');
+            }
+        });
+    }
+
+    function recalculate(kw) {
+        document.getElementById('preview-kw').textContent = kw.toFixed(1);
+
+        // 1. Gross
+        const gross = kw * BASE_COST;
+
+        // 2. Subsidy
+        let subsidy = 0;
+        if (kw <= 2.0) {
+            subsidy = kw * RATE_UPTO_2;
+        } else if (kw <= 3.0) {
+            subsidy = (2.0 * RATE_UPTO_2) + ((kw - 2.0) * RATE_3RD);
+        } else {
+            subsidy = (2.0 * RATE_UPTO_2) + (1.0 * RATE_3RD) + ((kw - 3.0) * RATE_ABOVE);
+        }
+        subsidy = Math.min(subsidy, CAP_AMOUNT);
+
+        // 3. Net
+        const net = Math.max(0, gross - subsidy);
+
+        // 4. Generation & Savings
+        const yearlyGen = Math.round(kw * GEN_FACTOR);
+        const monthlyGen = Math.round(yearlyGen / 12.0);
+        const yearlySavings = yearlyGen * TARIFF;
+        const monthlySavings = yearlySavings / 12.0;
+
+        // 5. Payback & Lifetime
+        const payback = yearlySavings > 0 ? (net / yearlySavings).toFixed(1) : '0.0';
+        const lifetime = (yearlySavings * 25.0) - net;
+
+        // DOM Updates
+        document.getElementById('preview-gross').textContent = '₹' + Math.round(gross).toLocaleString('en-IN');
+        document.getElementById('preview-subsidy').textContent = '- ₹' + Math.round(subsidy).toLocaleString('en-IN');
+        document.getElementById('preview-net').textContent = '₹' + Math.round(net).toLocaleString('en-IN');
+        document.getElementById('preview-payback').textContent = payback + ' Years';
+
+        document.getElementById('preview-yearly-gen').textContent = yearlyGen.toLocaleString('en-IN') + ' units/yr';
+        document.getElementById('preview-monthly-gen').textContent = '~' + monthlyGen.toLocaleString('en-IN') + ' units/mo';
+        document.getElementById('preview-yearly-savings').textContent = '₹' + Math.round(yearlySavings).toLocaleString('en-IN') + '/yr';
+        document.getElementById('preview-monthly-savings').textContent = '₹' + Math.round(monthlySavings).toLocaleString('en-IN') + '/mo';
+        document.getElementById('preview-lifetime').textContent = '₹' + Math.round(lifetime).toLocaleString('en-IN');
+    }
+</script>
+{% endblock %}

@@ -1,0 +1,260 @@
+{% extends "layouts/base.html" %}
+
+{% block head %}
+<style>
+    .glass-card {
+        background: white;
+        border: 1px solid #e5e7eb;
+        box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.05);
+    }
+</style>
+{% endblock %}
+
+{% block nav %}
+<nav class="bg-white border-b border-gray-100">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="flex items-center justify-between h-16">
+            <div class="flex items-center space-x-3">
+                <a href="/dashboard" class="flex items-center space-x-3">
+                    <div class="w-9 h-9 rounded-xl bg-solar-500 flex items-center justify-center">
+                        <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"/>
+                        </svg>
+                    </div>
+                    <span class="text-lg font-semibold text-gray-900">SolarSync</span>
+                </a>
+            </div>
+
+            <div class="hidden md:flex items-center space-x-1">
+                <a href="/dashboard" class="px-3 py-2 rounded-lg text-sm font-medium text-gray-600 hover:text-gray-900 hover:bg-gray-50">
+                    Dashboard
+                </a>
+                <a href="/leads" class="px-3 py-2 rounded-lg text-sm font-medium text-gray-600 hover:text-gray-900 hover:bg-gray-50">
+                    Leads Pipeline
+                </a>
+                <a href="/quotes" class="px-3 py-2 rounded-lg text-sm font-medium text-solar-600 bg-solar-50">
+                    Quotes
+                </a>
+                <a href="/projects" class="px-3 py-2 rounded-lg text-sm font-medium text-gray-600 hover:text-gray-900 hover:bg-gray-50">
+                    Projects Tracker
+                </a>
+                {% if user.role.value == 'admin' %}
+                <a href="/admin/rules" class="px-3 py-2 rounded-lg text-sm font-medium text-gray-600 hover:text-gray-900 hover:bg-gray-50">
+                    Dated Rules
+                </a>
+                {% endif %}
+            </div>
+
+            <div class="flex items-center space-x-4">
+                <div class="text-right hidden sm:block">
+                    <p class="text-sm font-medium text-gray-900">{{ user.name }}</p>
+                    <p class="text-xs text-gray-500 capitalize">{{ user.role.value }}</p>
+                </div>
+                <div class="w-9 h-9 rounded-full bg-solar-100 text-solar-700 flex items-center justify-center text-sm font-semibold">
+                    {{ user.name[0] | upper }}
+                </div>
+                <a href="/auth/logout" class="text-gray-400 hover:text-gray-600 transition" title="Logout">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/>
+                    </svg>
+                </a>
+            </div>
+        </div>
+    </div>
+</nav>
+{% endblock %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
+
+    <!-- Header & Summary -->
+    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-gray-200">
+        <div>
+            <h1 class="text-2xl font-bold text-gray-900">Solar Quotations</h1>
+            <p class="text-sm text-gray-500 mt-1">
+                Generated customer proposals with dated PM Surya Ghar subsidies and ReportLab PDF quotes.
+            </p>
+        </div>
+        <div class="flex items-center gap-3">
+            <a href="/leads" class="px-4 py-2 bg-solar-500 hover:bg-solar-600 text-white text-sm font-medium rounded-lg transition shadow-sm flex items-center gap-1.5">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+                </svg>
+                Create Quote from Lead
+            </a>
+        </div>
+    </div>
+
+    <!-- Live Search & Filter Bar -->
+    <div class="glass-card rounded-xl p-4 flex flex-col md:flex-row items-center justify-between gap-4">
+        <div class="relative w-full md:w-96">
+            <svg class="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+            </svg>
+            <input type="text" id="quote-search" placeholder="Search by customer name or quote number..." class="w-full pl-9 pr-4 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-solar-500" onkeyup="filterQuotes()">
+        </div>
+
+        <div class="flex items-center gap-2 w-full md:w-auto overflow-x-auto pb-1 md:pb-0">
+            <button onclick="setFilter('all')" id="btn-filter-all" class="filter-tab px-3 py-1.5 text-xs font-semibold rounded-lg bg-solar-50 text-solar-700 border border-solar-200">
+                All ({{ quote_items | length }})
+            </button>
+            <button onclick="setFilter('ready')" id="btn-filter-ready" class="filter-tab px-3 py-1.5 text-xs font-medium rounded-lg text-gray-600 hover:bg-gray-100">
+                Ready
+            </button>
+            <button onclick="setFilter('accepted')" id="btn-filter-accepted" class="filter-tab px-3 py-1.5 text-xs font-medium rounded-lg text-gray-600 hover:bg-gray-100">
+                Accepted
+            </button>
+        </div>
+    </div>
+
+    <!-- Quotations Zero-Horizontal-Scroll Master Card List -->
+    {% if quote_items %}
+    <div class="space-y-3" id="quotes-container">
+        {% for item in quote_items %}
+        {% set q = item.quote %}
+        {% set lead = item.lead %}
+        <div class="quote-card glass-card rounded-xl p-5 hover:border-solar-300 transition duration-150"
+             data-status="{{ q.status }}"
+             data-name="{{ lead.name | lower if lead else '' }}"
+             data-number="{{ q.quote_number | lower }}">
+
+            <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+                
+                <!-- Col 1: Customer & Quote Identity -->
+                <div class="flex items-start gap-4 min-w-[260px]">
+                    <div class="w-11 h-11 rounded-xl bg-solar-50 text-solar-700 flex items-center justify-center font-bold text-sm shrink-0 border border-solar-200">
+                        {{ q.system_size_kw }}k
+                    </div>
+                    <div>
+                        <div class="flex items-center gap-2">
+                            <a href="/quotes/{{ q.quote_number }}" class="font-bold text-gray-900 hover:text-solar-600 transition text-base">
+                                {{ lead.name if lead else 'Customer' }}
+                            </a>
+                            <span class="text-xs font-semibold px-2 py-0.5 rounded-full bg-gray-100 text-gray-600">
+                                {{ q.quote_number }}
+                            </span>
+                        </div>
+                        <p class="text-xs text-gray-500 mt-1">
+                            Lead {{ lead.lead_id if lead else '—' }} · PIN {{ lead.pincode if lead else '—' }} · {{ q.created_at.strftime('%d %b %Y') }}
+                        </p>
+                    </div>
+                </div>
+
+                <!-- Col 2: Financial Metrics (Zero scroll, responsive wrap) -->
+                <div class="grid grid-cols-2 sm:grid-cols-4 gap-4 text-left border-y lg:border-y-0 py-3 lg:py-0 border-gray-100">
+                    <div>
+                        <p class="text-[10px] uppercase font-bold text-gray-400">System Size</p>
+                        <p class="text-sm font-bold text-gray-900">{{ q.system_size_kw }} kW</p>
+                        <p class="text-[10px] text-gray-500">{{ "{:,}".format(q.yearly_generation_kwh) }} units/yr</p>
+                    </div>
+
+                    <div>
+                        <p class="text-[10px] uppercase font-bold text-emerald-600">Central Subsidy</p>
+                        <p class="text-sm font-bold text-emerald-700">₹{{ "{:,.0f}".format(q.subsidy_amount_rs) }}</p>
+                        <p class="text-[10px] text-emerald-600 font-medium">PM Surya Ghar</p>
+                    </div>
+
+                    <div>
+                        <p class="text-[10px] uppercase font-bold text-solar-700">Net Cost</p>
+                        <p class="text-sm font-extrabold text-solar-800">₹{{ "{:,.0f}".format(q.net_cost_rs) }}</p>
+                        <p class="text-[10px] text-gray-500">Gross ₹{{ "{:,.0f}".format(q.gross_cost_rs) }}</p>
+                    </div>
+
+                    <div>
+                        <p class="text-[10px] uppercase font-bold text-gray-400">Payback Period</p>
+                        <p class="text-sm font-extrabold text-emerald-700">{{ q.payback_years }} Years</p>
+                        <p class="text-[10px] text-gray-500">₹{{ "{:,.0f}".format(q.yearly_savings_rs) }}/yr</p>
+                    </div>
+                </div>
+
+                <!-- Col 3: Status & Action Buttons -->
+                <div class="flex items-center justify-between lg:justify-end gap-3 shrink-0">
+                    <div>
+                        {% if q.status == 'accepted' %}
+                        <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-bold bg-emerald-100 text-emerald-800">
+                            Accepted
+                        </span>
+                        {% else %}
+                        <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold bg-amber-100 text-amber-800">
+                            Ready
+                        </span>
+                        {% endif %}
+                    </div>
+
+                    <div class="flex items-center gap-2">
+                        <a href="/quotes/{{ q.quote_number }}" class="px-3 py-1.5 text-xs font-semibold bg-gray-900 hover:bg-gray-800 text-white rounded-lg transition shadow-sm">
+                            View Story
+                        </a>
+                        <a href="/quotes/{{ q.quote_number }}/pdf" target="_blank" class="p-1.5 text-gray-500 hover:text-solar-600 hover:bg-gray-100 rounded-lg transition" title="Download PDF Quotation">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                            </svg>
+                        </a>
+                    </div>
+                </div>
+
+            </div>
+
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <!-- Empty State -->
+    <div class="glass-card rounded-2xl p-12 text-center space-y-3">
+        <div class="w-12 h-12 rounded-full bg-solar-50 text-solar-600 mx-auto flex items-center justify-center">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+            </svg>
+        </div>
+        <h3 class="text-base font-bold text-gray-900">No proposals generated yet</h3>
+        <p class="text-xs text-gray-500 max-w-sm mx-auto">
+            Build your first solar proposal from any qualified lead in the pipeline.
+        </p>
+        <a href="/leads" class="inline-block mt-2 px-4 py-2 bg-solar-500 hover:bg-solar-600 text-white text-xs font-semibold rounded-lg transition">
+            View Leads Pipeline
+        </a>
+    </div>
+    {% endif %}
+
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    let currentFilter = 'all';
+
+    function setFilter(status) {
+        currentFilter = status;
+        document.querySelectorAll('.filter-tab').forEach(b => {
+            b.classList.remove('bg-solar-50', 'text-solar-700', 'border', 'border-solar-200');
+            b.classList.add('text-gray-600');
+        });
+        const activeBtn = document.getElementById('btn-filter-' + status);
+        if (activeBtn) {
+            activeBtn.classList.add('bg-solar-50', 'text-solar-700', 'border', 'border-solar-200');
+            activeBtn.classList.remove('text-gray-600');
+        }
+        filterQuotes();
+    }
+
+    function filterQuotes() {
+        const query = document.getElementById('quote-search').value.toLowerCase();
+        const cards = document.querySelectorAll('.quote-card');
+
+        cards.forEach(card => {
+            const status = card.getAttribute('data-status');
+            const name = card.getAttribute('data-name');
+            const number = card.getAttribute('data-number');
+
+            const matchesStatus = (currentFilter === 'all') || (status === currentFilter);
+            const matchesQuery = !query || name.includes(query) || number.includes(query);
+
+            if (matchesStatus && matchesQuery) {
+                card.style.display = '';
+            } else {
+                card.style.display = 'none';
+            }
+        });
+    }
+</script>
+{% endblock %}

@@ -1,0 +1,335 @@
+{% extends "layouts/base.html" %}
+
+{% block nav %}
+<nav class="bg-white border-b border-gray-100">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="flex items-center justify-between h-16">
+            <div class="flex items-center space-x-3">
+                <a href="/dashboard" class="flex items-center space-x-3">
+                    <div class="w-9 h-9 rounded-xl bg-solar-500 flex items-center justify-center">
+                        <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"/>
+                        </svg>
+                    </div>
+                    <span class="text-lg font-semibold text-gray-900">SolarSync</span>
+                </a>
+            </div>
+
+            <div class="hidden md:flex items-center space-x-1">
+                <a href="/dashboard" class="px-3 py-2 rounded-lg text-sm font-medium text-gray-600 hover:text-gray-900 hover:bg-gray-50">
+                    Dashboard
+                </a>
+                <a href="/leads" class="px-3 py-2 rounded-lg text-sm font-medium text-gray-600 hover:text-gray-900 hover:bg-gray-50">
+                    Leads Pipeline
+                </a>
+                <a href="/quotes" class="px-3 py-2 rounded-lg text-sm font-medium text-gray-600 hover:text-gray-900 hover:bg-gray-50">
+                    Quotes
+                </a>
+                {% if user and user.role.value == 'admin' %}
+                <a href="/admin/rules" class="px-3 py-2 rounded-lg text-sm font-medium text-gray-600 hover:text-gray-900 hover:bg-gray-50">
+                    Dated Rules
+                </a>
+                {% endif %}
+            </div>
+
+            <div class="flex items-center space-x-4">
+                <a href="/leads" class="text-xs font-medium text-gray-500 hover:text-gray-800 flex items-center">
+                    <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/>
+                    </svg>
+                    Back to Leads
+                </a>
+            </div>
+        </div>
+    </div>
+</nav>
+{% endblock %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    
+    <!-- Top banner with Lead ID & Quick Actions -->
+    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8 pb-6 border-b border-gray-100">
+        <div>
+            <div class="flex items-center space-x-3 mb-1">
+                <h1 class="text-2xl font-bold text-gray-900">{{ lead.name }}</h1>
+                <span class="font-mono text-xs font-semibold text-solar-800 bg-solar-100 px-2.5 py-1 rounded-lg">
+                    {{ lead.lead_id }}
+                </span>
+                {% if lead.score.value == 'high' %}
+                <span class="px-3 py-0.5 rounded-full text-xs font-semibold bg-green-100 text-green-800">
+                    ⭐ High Priority
+                </span>
+                {% elif lead.score.value == 'medium' %}
+                <span class="px-3 py-0.5 rounded-full text-xs font-semibold bg-amber-100 text-amber-800">
+                    🟡 Medium Priority
+                </span>
+                {% elif lead.score.value == 'low' %}
+                <span class="px-3 py-0.5 rounded-full text-xs font-semibold bg-gray-100 text-gray-600">
+                    ⚪ Low Priority
+                </span>
+                {% endif %}
+            </div>
+            <p class="text-xs text-gray-400">
+                Submitted on {{ lead.created_at.strftime('%d %b %Y at %I:%M %p') }} · PIN: {{ lead.pincode }}
+            </p>
+        </div>
+
+        <div class="flex items-center space-x-3">
+            <span class="text-xs font-medium text-gray-500">Status:</span>
+            <span class="px-3 py-1 bg-gray-100 rounded-lg text-xs font-semibold text-gray-800 uppercase tracking-wider">
+                {{ lead.status.value | replace('_', ' ') }}
+            </span>
+
+            <!-- Quick Pipeline Actions -->
+            <form method="POST" action="/leads/{{ lead.lead_id }}/action" class="flex items-center space-x-2">
+                {% if lead.status.value != 'survey_scheduled' and lead.score.value == 'high' %}
+                <input type="hidden" name="action" value="schedule_survey">
+                <button type="submit" class="px-3 py-1.5 bg-green-600 hover:bg-green-700 text-white text-xs font-semibold rounded-xl shadow-xs transition">
+                    📅 Schedule Survey Visit
+                </button>
+                {% elif lead.status.value != 'survey_scheduled' %}
+                <input type="hidden" name="action" value="log_call">
+                <button type="submit" class="px-3 py-1.5 bg-solar-500 hover:bg-solar-600 text-white text-xs font-semibold rounded-xl shadow-xs transition">
+                    📞 Log Screening Call
+                </button>
+                {% else %}
+                <span class="px-3 py-1 bg-green-50 text-green-700 border border-green-200 rounded-xl text-xs font-semibold">
+                    ✓ Survey Visit Booked
+                </span>
+                {% endif %}
+            </form>
+        </div>
+    </div>
+
+    <!-- 2-Column Layout -->
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
+        
+        <!-- Left Column: Details & Scoring -->
+        <div class="lg:col-span-7 space-y-6">
+            
+            <!-- Qualification Card -->
+            <div class="bg-white rounded-3xl border border-gray-100 p-6 shadow-2xs">
+                <h2 class="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-4">Qualification & Sizing</h2>
+                
+                <div class="grid grid-cols-2 gap-4 mb-4">
+                    <div class="bg-gray-50 rounded-2xl p-4">
+                        <p class="text-xs text-gray-500 mb-1">Recommended System</p>
+                        <p class="text-2xl font-bold text-gray-900">
+                            {% if lead.recommended_kw %}
+                            {{ lead.recommended_kw }} <span class="text-sm font-normal text-gray-500">kW</span>
+                            {% else %}
+                            <span class="text-sm text-gray-400">Not Applicable</span>
+                            {% endif %}
+                        </p>
+                    </div>
+
+                    <div class="bg-gray-50 rounded-2xl p-4">
+                        <p class="text-xs text-gray-500 mb-1">Monthly Bill</p>
+                        <p class="text-2xl font-bold text-solar-600">
+                            ₹{{ "{:,}".format(lead.monthly_bill_rs) }}
+                        </p>
+                    </div>
+                </div>
+
+                {% if score_breakdown %}
+                <!-- Transparent Multi-Factor Scorecard -->
+                <div class="mt-4 pt-4 border-t border-gray-100 space-y-3">
+                    <div class="flex items-center justify-between">
+                        <span class="text-xs font-bold text-gray-800">Qualification Score: {{ score_breakdown.total_score }} / 100</span>
+                        {% if score_breakdown.saved_survey_cost_inr > 0 %}
+                        <span class="text-xs font-semibold text-emerald-700 bg-emerald-50 px-2.5 py-0.5 rounded-full border border-emerald-200">
+                            Saved ₹2,500 Survey Cost
+                        </span>
+                        {% endif %}
+                    </div>
+
+                    <!-- Progress bar -->
+                    <div class="w-full bg-gray-100 rounded-full h-2 overflow-hidden">
+                        <div class="h-2 rounded-full {% if score_breakdown.total_score >= 70 %}bg-green-500{% elif score_breakdown.total_score >= 40 %}bg-amber-500{% else %}bg-gray-400{% endif %}" style="width: {{ score_breakdown.total_score }}%"></div>
+                    </div>
+
+                    <!-- Factor breakdown list -->
+                    <div class="space-y-2 pt-2">
+                        {% for f in score_breakdown.factors %}
+                        <div class="p-2.5 rounded-xl border border-gray-100 bg-gray-50/70 flex items-start justify-between text-xs">
+                            <div class="flex items-start space-x-2">
+                                {% if f.status == 'pass' %}
+                                <span class="text-green-600 font-bold">✓</span>
+                                {% elif f.status == 'warn' %}
+                                <span class="text-amber-600 font-bold">!</span>
+                                {% else %}
+                                <span class="text-red-500 font-bold">✕</span>
+                                {% endif %}
+                                <div>
+                                    <p class="font-medium text-gray-900">{{ f.name }}</p>
+                                    <p class="text-gray-500 text-[11px] mt-0.5">{{ f.detail }}</p>
+                                </div>
+                            </div>
+                            <span class="font-semibold text-gray-700 font-mono">{{ f.points }}/{{ f.max_points }}</span>
+                        </div>
+                        {% endfor %}
+                    </div>
+
+                    <!-- Strategy Action Note -->
+                    <div class="p-3 rounded-xl bg-gray-900 text-white text-xs mt-2">
+                        <p class="font-semibold text-solar-400 uppercase text-[10px] tracking-wider">Company A Recommended Protocol</p>
+                        <p class="mt-1 font-medium">{{ score_breakdown.action }}: {{ score_breakdown.action_note }}</p>
+                    </div>
+                </div>
+                {% endif %}
+
+                <div class="p-3.5 bg-solar-50/50 rounded-2xl border border-solar-100 text-xs text-gray-700 mt-4">
+                    <span class="font-semibold text-solar-900">Score Assessment:</span> {{ lead.score_reason or "Pending AI review" }}
+                </div>
+            </div>
+
+            <!-- Applicant Details Card -->
+            <div class="bg-white rounded-3xl border border-gray-100 p-6 shadow-2xs">
+                <h2 class="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-4">Customer Details</h2>
+                
+                <div class="space-y-3 text-sm">
+                    <div class="flex justify-between py-2 border-b border-gray-50">
+                        <span class="text-gray-500">Full Name</span>
+                        <span class="font-semibold text-gray-900">{{ lead.name }}</span>
+                    </div>
+                    <div class="flex justify-between py-2 border-b border-gray-50">
+                        <span class="text-gray-500">Phone Number</span>
+                        <span class="font-medium text-gray-900">+91 {{ lead.phone }}</span>
+                    </div>
+                    <div class="flex justify-between py-2 border-b border-gray-50">
+                        <span class="text-gray-500">Email Address</span>
+                        <span class="font-medium text-gray-900">{{ lead.email or "—" }}</span>
+                    </div>
+                    <div class="flex justify-between py-2 border-b border-gray-50">
+                        <span class="text-gray-500">Property Ownership</span>
+                        <span class="font-semibold capitalize text-gray-900">{{ lead.ownership.value }}</span>
+                    </div>
+                    <div class="flex justify-between py-2 border-b border-gray-50">
+                        <span class="text-gray-500">Roof Construction</span>
+                        <span class="font-medium text-gray-900">{{ lead.roof_type.value | replace('_', ' ') | title }}</span>
+                    </div>
+                    <div class="flex justify-between py-2 border-b border-gray-50">
+                        <span class="text-gray-500">Usable Roof Area</span>
+                        <span class="font-medium text-gray-900">{{ lead.roof_area_sqft }} sq. ft.</span>
+                    </div>
+                    <div class="flex justify-between py-2">
+                        <span class="text-gray-500">PIN Code</span>
+                        <span class="font-medium text-gray-900">{{ lead.pincode }} (Vidarbha)</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- AI Extraction & Verification Card -->
+            <div class="bg-white rounded-3xl border border-gray-100 p-6 shadow-2xs">
+                <div class="flex items-center justify-between pb-3 mb-4 border-b border-gray-100">
+                    <h2 class="text-xs font-semibold text-gray-400 uppercase tracking-wider">AI Bill OCR & Technical Parameters</h2>
+                    {% if reading and reading.is_confirmed %}
+                    <span class="text-xs font-semibold text-green-700 bg-green-50 px-2.5 py-0.5 rounded-full flex items-center">
+                        ✓ Verified
+                    </span>
+                    {% elif reading %}
+                    <span class="text-xs font-semibold text-solar-700 bg-solar-50 px-2.5 py-0.5 rounded-full">
+                        AI Analyzed (Needs Staff Check)
+                    </span>
+                    {% else %}
+                    <span class="text-xs font-semibold text-gray-400 bg-gray-50 px-2.5 py-0.5 rounded-full">
+                        Not Yet Analyzed
+                    </span>
+                    {% endif %}
+                </div>
+
+                {% if reading %}
+                <div class="space-y-3 text-sm mb-5">
+                    <div class="flex justify-between py-1.5 border-b border-gray-50">
+                        <span class="text-gray-500">Consumer Number</span>
+                        <span class="font-mono font-medium text-gray-900">{{ reading.masked_consumer_number() }}</span>
+                    </div>
+                    <div class="flex justify-between py-1.5 border-b border-gray-50">
+                        <span class="text-gray-500">Consumer Name</span>
+                        <span class="font-medium text-gray-900">{{ reading.consumer_name or lead.name }}</span>
+                    </div>
+                    <div class="flex justify-between py-1.5 border-b border-gray-50">
+                        <span class="text-gray-500">Tariff</span>
+                        <span class="font-medium text-gray-900">{{ reading.tariff_category or 'LT-I Domestic' }}</span>
+                    </div>
+                    <div class="flex justify-between py-1.5 border-b border-gray-50">
+                        <span class="text-gray-500">Sanctioned Load</span>
+                        <span class="font-semibold text-gray-900">{{ reading.sanctioned_load_kw or '—' }} kW</span>
+                    </div>
+                    <div class="flex justify-between py-1.5 border-b border-gray-50">
+                        <span class="text-gray-500">Average Monthly Units</span>
+                        <span class="font-semibold text-solar-600">{{ reading.monthly_units or '—' }} kWh</span>
+                    </div>
+                    <div class="flex justify-between py-1.5">
+                        <span class="text-gray-500">Photo Quality</span>
+                        <span class="capitalize font-medium {% if reading.photo_quality == 'good' %}text-green-600{% else %}text-amber-600{% endif %}">
+                            {{ reading.photo_quality }}
+                        </span>
+                    </div>
+                </div>
+                {% endif %}
+
+                <div class="pt-2 flex flex-col sm:flex-row gap-3">
+                    <a href="/leads/{{ lead.lead_id }}/quote/new" class="flex-1 py-3 px-4 bg-solar-500 hover:bg-solar-600 active:bg-solar-700 text-white font-bold text-xs sm:text-sm rounded-xl shadow-xs transition flex items-center justify-center space-x-2">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                        </svg>
+                        <span>Build Solar Proposal & Quote</span>
+                    </a>
+                    <a href="/leads/{{ lead.lead_id }}/review" class="py-3 px-4 bg-gray-100 hover:bg-gray-200 text-gray-800 font-semibold text-xs sm:text-sm rounded-xl transition flex items-center justify-center space-x-2">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/>
+                        </svg>
+                        <span>{% if reading %}Verify OCR{% else %}Run AI OCR{% endif %}</span>
+                    </a>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- Right Column: Uploaded Bill Photo Viewer -->
+        <div class="lg:col-span-5">
+            <div class="bg-white rounded-3xl border border-gray-100 p-6 shadow-2xs sticky top-6">
+                <div class="flex items-center justify-between mb-4">
+                    <h2 class="text-xs font-semibold text-gray-400 uppercase tracking-wider">Uploaded Electricity Bill</h2>
+                    <a href="/{{ lead.bill_photo_path }}" target="_blank" class="text-xs font-semibold text-solar-600 hover:text-solar-700 flex items-center">
+                        <svg class="w-3.5 h-3.5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/>
+                        </svg>
+                        Open Full File
+                    </a>
+                </div>
+
+                <!-- Preview Frame -->
+                <div class="rounded-2xl border border-gray-200 overflow-hidden bg-gray-50 flex items-center justify-center min-h-[380px] p-2">
+                    {% if lead.bill_photo_path.endswith('.pdf') %}
+                    <div class="text-center p-8">
+                        <svg class="w-16 h-16 text-red-500 mx-auto mb-3" fill="currentColor" viewBox="0 0 20 20">
+                            <path fill-rule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4z" clip-rule="evenodd"/>
+                        </svg>
+                        <p class="text-sm font-semibold text-gray-900">PDF Document</p>
+                        <p class="text-xs text-gray-500 mb-4">{{ lead.bill_photo_path.split('/')[-1] }}</p>
+                        <a href="/{{ lead.bill_photo_path }}" target="_blank" class="px-4 py-2 bg-white border border-gray-300 rounded-xl text-xs font-semibold text-gray-700 shadow-2xs hover:bg-gray-50">
+                            View PDF
+                        </a>
+                    </div>
+                    {% else %}
+                    <img 
+                        src="/{{ lead.bill_photo_path }}" 
+                        alt="Electricity Bill" 
+                        class="w-full h-auto max-h-[500px] object-contain rounded-xl"
+                        onerror="this.onerror=null; this.src='https://placehold.co/600x800?text=Bill+Photo+Sample';"
+                    >
+                    {% endif %}
+                </div>
+
+                <p class="text-xs text-gray-400 text-center mt-3">
+                    🔒 Personal data protected under DPDP Act 2023
+                </p>
+            </div>
+        </div>
+
+    </div>
+</div>
+{% endblock %}

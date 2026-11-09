@@ -1,0 +1,479 @@
+{% extends "layouts/base.html" %}
+
+{% block head %}
+<style>
+    .glass-card {
+        background: white;
+        border: 1px solid #e5e7eb;
+        box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.05);
+    }
+</style>
+{% endblock %}
+
+{% block nav %}
+<nav class="bg-white border-b border-gray-100">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="flex items-center justify-between h-16">
+            <div class="flex items-center space-x-3">
+                <a href="/dashboard" class="flex items-center space-x-3">
+                    <div class="w-9 h-9 rounded-xl bg-solar-500 flex items-center justify-center">
+                        <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"/>
+                        </svg>
+                    </div>
+                    <span class="text-lg font-semibold text-gray-900">SolarSync</span>
+                </a>
+                <span class="text-xs bg-purple-100 text-purple-700 font-medium px-2.5 py-0.5 rounded-full">Admin Console</span>
+            </div>
+
+            <div class="hidden md:flex items-center space-x-1">
+                <a href="/dashboard" class="px-3 py-2 rounded-lg text-sm font-medium text-gray-600 hover:text-gray-900 hover:bg-gray-50">
+                    Dashboard
+                </a>
+                <a href="/leads" class="px-3 py-2 rounded-lg text-sm font-medium text-gray-600 hover:text-gray-900 hover:bg-gray-50">
+                    Leads Pipeline
+                </a>
+                <a href="/quotes" class="px-3 py-2 rounded-lg text-sm font-medium text-gray-600 hover:text-gray-900 hover:bg-gray-50">
+                    Quotes
+                </a>
+                <a href="/admin/rules" class="px-3 py-2 rounded-lg text-sm font-medium text-solar-600 bg-solar-50">
+                    Dated Rules
+                </a>
+            </div>
+
+            <div class="flex items-center space-x-4">
+                <div class="text-right hidden sm:block">
+                    <p class="text-sm font-medium text-gray-900">{{ user.name }}</p>
+                    <p class="text-xs text-purple-600 capitalize font-medium">{{ user.role.value }}</p>
+                </div>
+                <div class="w-9 h-9 rounded-full bg-purple-100 text-purple-700 flex items-center justify-center text-sm font-semibold">
+                    {{ user.name[0] | upper }}
+                </div>
+                <a href="/auth/logout" class="text-gray-400 hover:text-gray-600 transition" title="Logout">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/>
+                    </svg>
+                </a>
+            </div>
+        </div>
+    </div>
+</nav>
+{% endblock %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
+
+    <!-- Header Section -->
+    <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-4 border-b border-gray-200">
+        <div>
+            <h1 class="text-2xl font-bold text-gray-900">Subsidy Schemes & Turnkey Pricing Rules</h1>
+            <p class="text-sm text-gray-500 mt-1">
+                Versioned rule engine with effective date ranges. Mathematical calculations are strictly rule-based (no AI hallucination).
+            </p>
+        </div>
+        <div class="flex items-center gap-3">
+            <button onclick="document.getElementById('modal-subsidy').classList.remove('hidden')" class="px-4 py-2 bg-solar-500 hover:bg-solar-600 text-white text-sm font-medium rounded-lg transition shadow-sm">
+                + New Subsidy Scheme
+            </button>
+            <button onclick="document.getElementById('modal-pricing').classList.remove('hidden')" class="px-4 py-2 bg-gray-900 hover:bg-gray-800 text-white text-sm font-medium rounded-lg transition shadow-sm">
+                + New Pricing Standard
+            </button>
+        </div>
+    </div>
+
+    <!-- Active Snapshot Badges -->
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div class="glass-card rounded-xl p-5 border-l-4 border-l-amber-500">
+            <p class="text-xs font-semibold text-gray-400 uppercase tracking-wider">Active Subsidy Scheme</p>
+            <h3 class="text-base font-bold text-gray-900 mt-1 truncate" title="{{ active_subsidy.scheme_name if active_subsidy else 'None' }}">
+                {{ active_subsidy.scheme_name if active_subsidy else 'No active scheme' }}
+            </h3>
+            <p class="text-xs text-emerald-600 font-medium mt-1">
+                Max Cap: ₹{{ "{:,.0f}".format(active_subsidy.cap_amount) if active_subsidy else '0' }}
+            </p>
+        </div>
+
+        <div class="glass-card rounded-xl p-5 border-l-4 border-l-blue-500">
+            <p class="text-xs font-semibold text-gray-400 uppercase tracking-wider">Turnkey Base Cost</p>
+            <h3 class="text-2xl font-bold text-gray-900 mt-1">
+                ₹{{ "{:,.0f}".format(active_pricing.base_cost_per_kw) if active_pricing else '0' }} <span class="text-xs text-gray-500 font-normal">/ kW</span>
+            </h3>
+            <p class="text-xs text-gray-500 mt-1">Includes Mono PERC + Inverter + GI structure</p>
+        </div>
+
+        <div class="glass-card rounded-xl p-5 border-l-4 border-l-emerald-500">
+            <p class="text-xs font-semibold text-gray-400 uppercase tracking-wider">Generation Standard</p>
+            <h3 class="text-2xl font-bold text-gray-900 mt-1">
+                {{ "{:,.0f}".format(active_pricing.generation_factor_kwh_per_kw) if active_pricing else '0' }} <span class="text-xs text-gray-500 font-normal">kWh/kW/yr</span>
+            </h3>
+            <p class="text-xs text-gray-500 mt-1">Company A Vidarbha regional baseline</p>
+        </div>
+
+        <div class="glass-card rounded-xl p-5 border-l-4 border-l-purple-500">
+            <p class="text-xs font-semibold text-gray-400 uppercase tracking-wider">MSEDCL Unit Tariff</p>
+            <h3 class="text-2xl font-bold text-gray-900 mt-1">
+                ₹{{ "{:.2f}".format(active_pricing.tariff_per_kwh_rs) if active_pricing else '0.00' }} <span class="text-xs text-gray-500 font-normal">/ kWh</span>
+            </h3>
+            <p class="text-xs text-gray-500 mt-1">Residential tariff for payback calculation</p>
+        </div>
+    </div>
+
+    <!-- Section 1: Subsidy Rules Table -->
+    <div class="glass-card rounded-xl overflow-hidden">
+        <div class="px-6 py-4 bg-gray-50 border-b border-gray-100 flex items-center justify-between">
+            <div>
+                <h2 class="text-base font-semibold text-gray-900">Dated Central & State Subsidy Schemes</h2>
+                <p class="text-xs text-gray-500">Rules apply dynamically based on proposal creation date.</p>
+            </div>
+            <span class="text-xs text-gray-400">{{ subsidy_rules | length }} Schemes Configured</span>
+        </div>
+        <div class="overflow-x-auto">
+            <table class="min-w-full divide-y divide-gray-200 text-sm">
+                <thead class="bg-gray-50">
+                    <tr>
+                        <th class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Scheme Name</th>
+                        <th class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Effective Dates</th>
+                        <th class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Rate (1-2 kW)</th>
+                        <th class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Rate (3rd kW)</th>
+                        <th class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Max Cap</th>
+                        <th class="px-6 py-3 text-center text-xs font-semibold text-gray-500 uppercase tracking-wider">Status</th>
+                        <th class="px-6 py-3 text-right text-xs font-semibold text-gray-500 uppercase tracking-wider">Action</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-gray-100 bg-white">
+                    {% for rule in subsidy_rules %}
+                    <tr class="hover:bg-gray-50 transition">
+                        <td class="px-6 py-4">
+                            <div class="font-medium text-gray-900">{{ rule.scheme_name }}</div>
+                            <div class="text-xs text-gray-400">ID: SUB-{{ rule.id }}</div>
+                        </td>
+                        <td class="px-6 py-4 text-gray-600 text-xs">
+                            <span class="font-medium text-gray-800">{{ rule.effective_from.strftime('%d %b %Y') }}</span>
+                            <span class="text-gray-400"> to </span>
+                            <span class="font-medium text-gray-800">{{ rule.effective_to.strftime('%d %b %Y') if rule.effective_to else 'Active (No expiry)' }}</span>
+                        </td>
+                        <td class="px-6 py-4 font-semibold text-gray-800">
+                            ₹{{ "{:,.0f}".format(rule.rate_per_kw_upto_2) }} / kW
+                        </td>
+                        <td class="px-6 py-4 font-semibold text-gray-800">
+                            ₹{{ "{:,.0f}".format(rule.rate_for_3rd_kw) }}
+                        </td>
+                        <td class="px-6 py-4 font-bold text-emerald-600">
+                            ₹{{ "{:,.0f}".format(rule.cap_amount) }}
+                        </td>
+                        <td class="px-6 py-4 text-center">
+                            {% if rule.is_active %}
+                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-emerald-100 text-emerald-800">
+                                Active
+                            </span>
+                            {% else %}
+                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-600">
+                                Inactive
+                            </span>
+                            {% endif %}
+                        </td>
+                        <td class="px-6 py-4 text-right">
+                            <form action="/admin/rules/subsidy/{{ rule.id }}/toggle" method="POST" class="inline">
+                                <button type="submit" class="text-xs font-medium text-gray-600 hover:text-solar-600 underline">
+                                    {{ 'Deactivate' if rule.is_active else 'Activate' }}
+                                </button>
+                            </form>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Section 2: Turnkey Pricing Rules Table -->
+    <div class="glass-card rounded-xl overflow-hidden">
+        <div class="px-6 py-4 bg-gray-50 border-b border-gray-100 flex items-center justify-between">
+            <div>
+                <h2 class="text-base font-semibold text-gray-900">Dated Turnkey Pricing & Generation Baselines</h2>
+                <p class="text-xs text-gray-500">Defines installation turnkey cost, generation formula factor, and DISCOM grid tariffs.</p>
+            </div>
+            <span class="text-xs text-gray-400">{{ pricing_rules | length }} Pricing Standards</span>
+        </div>
+        <div class="overflow-x-auto">
+            <table class="min-w-full divide-y divide-gray-200 text-sm">
+                <thead class="bg-gray-50">
+                    <tr>
+                        <th class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Standard Name</th>
+                        <th class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Effective Dates</th>
+                        <th class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Turnkey Cost</th>
+                        <th class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Gen Factor</th>
+                        <th class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">MSEDCL Tariff</th>
+                        <th class="px-6 py-3 text-center text-xs font-semibold text-gray-500 uppercase tracking-wider">Status</th>
+                        <th class="px-6 py-3 text-right text-xs font-semibold text-gray-500 uppercase tracking-wider">Action</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-gray-100 bg-white">
+                    {% for pr in pricing_rules %}
+                    <tr class="hover:bg-gray-50 transition">
+                        <td class="px-6 py-4">
+                            <div class="font-medium text-gray-900">{{ pr.name }}</div>
+                            <div class="text-xs text-gray-400">ID: PRC-{{ pr.id }}</div>
+                        </td>
+                        <td class="px-6 py-4 text-gray-600 text-xs">
+                            <span class="font-medium text-gray-800">{{ pr.effective_from.strftime('%d %b %Y') }}</span>
+                            <span class="text-gray-400"> to </span>
+                            <span class="font-medium text-gray-800">{{ pr.effective_to.strftime('%d %b %Y') if pr.effective_to else 'Active (No expiry)' }}</span>
+                        </td>
+                        <td class="px-6 py-4 font-semibold text-gray-900">
+                            ₹{{ "{:,.0f}".format(pr.base_cost_per_kw) }} / kW
+                        </td>
+                        <td class="px-6 py-4 font-medium text-gray-700">
+                            {{ "{:,.0f}".format(pr.generation_factor_kwh_per_kw) }} kWh/kW/yr
+                        </td>
+                        <td class="px-6 py-4 font-medium text-gray-700">
+                            ₹{{ "{:.2f}".format(pr.tariff_per_kwh_rs) }} / kWh
+                        </td>
+                        <td class="px-6 py-4 text-center">
+                            {% if pr.is_active %}
+                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-emerald-100 text-emerald-800">
+                                Active
+                            </span>
+                            {% else %}
+                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-600">
+                                Inactive
+                            </span>
+                            {% endif %}
+                        </td>
+                        <td class="px-6 py-4 text-right">
+                            <form action="/admin/rules/pricing/{{ pr.id }}/toggle" method="POST" class="inline">
+                                <button type="submit" class="text-xs font-medium text-gray-600 hover:text-solar-600 underline">
+                                    {{ 'Deactivate' if pr.is_active else 'Activate' }}
+                                </button>
+                            </form>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Section 3: Live Mathematical Verification Matrix -->
+    <div class="glass-card rounded-xl p-6">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between pb-4 border-b border-gray-100 gap-2">
+            <div>
+                <h2 class="text-base font-semibold text-gray-900">Live Formula Verification Matrix (Current Rules)</h2>
+                <p class="text-xs text-gray-500">Deterministic check across standard residential capacities (1 kW to 5 kW).</p>
+            </div>
+            <span class="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-medium bg-amber-50 text-amber-800 border border-amber-200">
+                Formula Verified · No Hallucination
+            </span>
+        </div>
+
+        <div class="mt-4 overflow-x-auto">
+            <table class="min-w-full divide-y divide-gray-200 text-sm">
+                <thead class="bg-gray-50">
+                    <tr>
+                        <th class="px-4 py-2.5 text-left text-xs font-semibold text-gray-500 uppercase">System Size</th>
+                        <th class="px-4 py-2.5 text-left text-xs font-semibold text-gray-500 uppercase">Gross Cost</th>
+                        <th class="px-4 py-2.5 text-left text-xs font-semibold text-gray-500 uppercase">Govt Subsidy (DBT)</th>
+                        <th class="px-4 py-2.5 text-left text-xs font-semibold text-gray-500 uppercase">Net Cost to Owner</th>
+                        <th class="px-4 py-2.5 text-left text-xs font-semibold text-gray-500 uppercase">Yearly Units (kWh)</th>
+                        <th class="px-4 py-2.5 text-left text-xs font-semibold text-gray-500 uppercase">Yearly Savings</th>
+                        <th class="px-4 py-2.5 text-left text-xs font-semibold text-gray-500 uppercase">Payback Period</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-gray-100 bg-white">
+                    {% for sim in simulations %}
+                    <tr class="hover:bg-amber-50/40 transition">
+                        <td class="px-4 py-3 font-bold text-gray-900">{{ sim.system_size_kw }} kW</td>
+                        <td class="px-4 py-3 text-gray-600">₹{{ "{:,.0f}".format(sim.gross_cost_rs) }}</td>
+                        <td class="px-4 py-3 font-semibold text-emerald-600">- ₹{{ "{:,.0f}".format(sim.subsidy_amount_rs) }}</td>
+                        <td class="px-4 py-3 font-bold text-solar-700">₹{{ "{:,.0f}".format(sim.net_cost_rs) }}</td>
+                        <td class="px-4 py-3 text-gray-700">{{ "{:,}".format(sim.yearly_generation_kwh) }} units</td>
+                        <td class="px-4 py-3 text-gray-900 font-medium">₹{{ "{:,.0f}".format(sim.yearly_savings_rs) }} / yr</td>
+                        <td class="px-4 py-3">
+                            <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                                {{ sim.payback_years }} Years
+                            </span>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Section 4: Live Interactive Sandbox Calculator -->
+    <div class="glass-card rounded-xl p-6 bg-gradient-to-br from-white to-amber-50/20">
+        <h2 class="text-base font-semibold text-gray-900">Custom Size Interactive Sandbox</h2>
+        <p class="text-xs text-gray-500 mb-4">Test non-standard capacities (e.g. 2.5 kW, 3.3 kW, 6.0 kW) against active dated rules.</p>
+        
+        <div class="flex flex-col md:flex-row items-center gap-6">
+            <div class="w-full md:w-1/3 space-y-2">
+                <label class="block text-xs font-semibold text-gray-700 uppercase">System Size (kW)</label>
+                <div class="flex items-center gap-3">
+                    <input type="range" id="sandbox-slider" min="1.0" max="10.0" step="0.5" value="3.0" class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-solar-500" oninput="updateSandbox(this.value)">
+                    <span id="sandbox-val" class="text-lg font-bold text-gray-900 w-16 text-right">3.0 kW</span>
+                </div>
+            </div>
+
+            <div class="w-full md:w-2/3 grid grid-cols-2 sm:grid-cols-4 gap-3">
+                <div class="bg-white p-3 rounded-lg border border-gray-100 text-center">
+                    <p class="text-xs text-gray-400">Gross Turnkey</p>
+                    <p id="sb-gross" class="text-sm font-bold text-gray-900 mt-1">₹1,80,000</p>
+                </div>
+                <div class="bg-white p-3 rounded-lg border border-gray-100 text-center">
+                    <p class="text-xs text-gray-400">PM Surya Ghar Subsidy</p>
+                    <p id="sb-subsidy" class="text-sm font-bold text-emerald-600 mt-1">₹78,000</p>
+                </div>
+                <div class="bg-white p-3 rounded-lg border border-amber-200 bg-amber-50/40 text-center">
+                    <p class="text-xs text-amber-800 font-medium">Net Cost</p>
+                    <p id="sb-net" class="text-sm font-bold text-solar-700 mt-1">₹1,02,000</p>
+                </div>
+                <div class="bg-white p-3 rounded-lg border border-gray-100 text-center">
+                    <p class="text-xs text-gray-400">Payback Period</p>
+                    <p id="sb-payback" class="text-sm font-bold text-emerald-700 mt-1">3.2 Years</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<!-- Modal 1: Add New Subsidy Scheme -->
+<div id="modal-subsidy" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-gray-900/40 backdrop-blur-sm p-4">
+    <div class="bg-white rounded-2xl max-w-lg w-full p-6 shadow-xl space-y-4">
+        <div class="flex items-center justify-between pb-3 border-b border-gray-100">
+            <h3 class="text-base font-bold text-gray-900">Add Dated Subsidy Scheme</h3>
+            <button onclick="document.getElementById('modal-subsidy').classList.add('hidden')" class="text-gray-400 hover:text-gray-600 text-xl font-bold">&times;</button>
+        </div>
+        <form action="/admin/rules/subsidy" method="POST" class="space-y-4">
+            <div>
+                <label class="block text-xs font-medium text-gray-700 mb-1">Scheme Legal Name</label>
+                <input type="text" name="scheme_name" required value="PM Surya Ghar: Muft Bijli Yojana (Phase 2 Revision)" class="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-solar-500 focus:border-solar-500">
+            </div>
+            <div class="grid grid-cols-2 gap-3">
+                <div>
+                    <label class="block text-xs font-medium text-gray-700 mb-1">Effective From</label>
+                    <input type="date" name="effective_from" required value="2024-02-15" class="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg">
+                </div>
+                <div>
+                    <label class="block text-xs font-medium text-gray-700 mb-1">Effective To (Optional)</label>
+                    <input type="date" name="effective_to" class="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg" placeholder="Indefinite">
+                </div>
+            </div>
+            <div class="grid grid-cols-2 gap-3">
+                <div>
+                    <label class="block text-xs font-medium text-gray-700 mb-1">Rate (1st & 2nd kW) (₹/kW)</label>
+                    <input type="number" step="1000" name="rate_per_kw_upto_2" required value="30000" class="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg">
+                </div>
+                <div>
+                    <label class="block text-xs font-medium text-gray-700 mb-1">Rate for 3rd kW (₹)</label>
+                    <input type="number" step="1000" name="rate_for_3rd_kw" required value="18000" class="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg">
+                </div>
+            </div>
+            <div class="grid grid-cols-2 gap-3">
+                <div>
+                    <label class="block text-xs font-medium text-gray-700 mb-1">Rate Above 3 kW (₹)</label>
+                    <input type="number" step="1000" name="rate_above_3rd_kw" value="0" class="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg">
+                </div>
+                <div>
+                    <label class="block text-xs font-medium text-gray-700 mb-1">Max Cap Amount (₹)</label>
+                    <input type="number" step="1000" name="cap_amount" required value="78000" class="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg">
+                </div>
+            </div>
+            <div class="flex items-center justify-end gap-3 pt-3 border-t border-gray-100">
+                <button type="button" onclick="document.getElementById('modal-subsidy').classList.add('hidden')" class="px-4 py-2 text-xs font-medium text-gray-600 hover:bg-gray-100 rounded-lg">Cancel</button>
+                <button type="submit" class="px-4 py-2 text-xs font-medium bg-solar-500 hover:bg-solar-600 text-white rounded-lg">Save Scheme Rule</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Modal 2: Add New Turnkey Pricing Standard -->
+<div id="modal-pricing" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-gray-900/40 backdrop-blur-sm p-4">
+    <div class="bg-white rounded-2xl max-w-lg w-full p-6 shadow-xl space-y-4">
+        <div class="flex items-center justify-between pb-3 border-b border-gray-100">
+            <h3 class="text-base font-bold text-gray-900">Add Dated Turnkey Pricing Standard</h3>
+            <button onclick="document.getElementById('modal-pricing').classList.add('hidden')" class="text-gray-400 hover:text-gray-600 text-xl font-bold">&times;</button>
+        </div>
+        <form action="/admin/rules/pricing" method="POST" class="space-y-4">
+            <div>
+                <label class="block text-xs font-medium text-gray-700 mb-1">Standard Name</label>
+                <input type="text" name="name" required value="Vidarbha Turnkey Rooftop Solar 2024 (Mono PERC)" class="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-solar-500 focus:border-solar-500">
+            </div>
+            <div class="grid grid-cols-2 gap-3">
+                <div>
+                    <label class="block text-xs font-medium text-gray-700 mb-1">Effective From</label>
+                    <input type="date" name="effective_from" required value="2024-01-01" class="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg">
+                </div>
+                <div>
+                    <label class="block text-xs font-medium text-gray-700 mb-1">Effective To (Optional)</label>
+                    <input type="date" name="effective_to" class="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg" placeholder="Indefinite">
+                </div>
+            </div>
+            <div class="grid grid-cols-3 gap-3">
+                <div>
+                    <label class="block text-xs font-medium text-gray-700 mb-1">Turnkey (₹/kW)</label>
+                    <input type="number" step="1000" name="base_cost_per_kw" required value="60000" class="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg">
+                </div>
+                <div>
+                    <label class="block text-xs font-medium text-gray-700 mb-1">Gen (kWh/kW/yr)</label>
+                    <input type="number" step="50" name="generation_factor_kwh_per_kw" required value="1400" class="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg">
+                </div>
+                <div>
+                    <label class="block text-xs font-medium text-gray-700 mb-1">Tariff (₹/kWh)</label>
+                    <input type="number" step="0.25" name="tariff_per_kwh_rs" required value="7.50" class="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg">
+                </div>
+            </div>
+            <div class="flex items-center justify-end gap-3 pt-3 border-t border-gray-100">
+                <button type="button" onclick="document.getElementById('modal-pricing').classList.add('hidden')" class="px-4 py-2 text-xs font-medium text-gray-600 hover:bg-gray-100 rounded-lg">Cancel</button>
+                <button type="submit" class="px-4 py-2 text-xs font-medium bg-gray-900 hover:bg-gray-800 text-white rounded-lg">Save Pricing Standard</button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    // Live sandbox calculation script using active rule parameters
+    const BASE_COST = {{ active_pricing.base_cost_per_kw if active_pricing else 60000.0 }};
+    const RATE_UPTO_2 = {{ active_subsidy.rate_per_kw_upto_2 if active_subsidy else 30000.0 }};
+    const RATE_3RD = {{ active_subsidy.rate_for_3rd_kw if active_subsidy else 18000.0 }};
+    const RATE_ABOVE = {{ active_subsidy.rate_above_3rd_kw if active_subsidy else 0.0 }};
+    const CAP_AMOUNT = {{ active_subsidy.cap_amount if active_subsidy else 78000.0 }};
+    const GEN_FACTOR = {{ active_pricing.generation_factor_kwh_per_kw if active_pricing else 1400.0 }};
+    const TARIFF = {{ active_pricing.tariff_per_kwh_rs if active_pricing else 7.50 }};
+
+    function updateSandbox(val) {
+        const kw = parseFloat(val);
+        document.getElementById('sandbox-val').textContent = kw.toFixed(1) + ' kW';
+
+        // 1. Gross Cost
+        const gross = kw * BASE_COST;
+
+        // 2. Subsidy
+        let subsidy = 0;
+        if (kw <= 2.0) {
+            subsidy = kw * RATE_UPTO_2;
+        } else if (kw <= 3.0) {
+            subsidy = (2.0 * RATE_UPTO_2) + ((kw - 2.0) * RATE_3RD);
+        } else {
+            subsidy = (2.0 * RATE_UPTO_2) + (1.0 * RATE_3RD) + ((kw - 3.0) * RATE_ABOVE);
+        }
+        subsidy = Math.min(subsidy, CAP_AMOUNT);
+
+        // 3. Net Cost
+        const net = Math.max(0, gross - subsidy);
+
+        // 4. Generation & Payback
+        const yearlyUnits = kw * GEN_FACTOR;
+        const yearlySavings = yearlyUnits * TARIFF;
+        const payback = yearlySavings > 0 ? (net / yearlySavings).toFixed(1) : '0.0';
+
+        // Render
+        document.getElementById('sb-gross').textContent = '₹' + Math.round(gross).toLocaleString('en-IN');
+        document.getElementById('sb-subsidy').textContent = '₹' + Math.round(subsidy).toLocaleString('en-IN');
+        document.getElementById('sb-net').textContent = '₹' + Math.round(net).toLocaleString('en-IN');
+        document.getElementById('sb-payback').textContent = payback + ' Years';
+    }
+</script>
+{% endblock %}
