@@ -8,8 +8,8 @@
 
 ## Evaluation Reference Links
 
-- **GitHub Repository:** `[INSERT_YOUR_GITHUB_REPO_URL]` *(e.g. `https://github.com/<username>/solarsync`)*
-- **Live Deployed App:** `[INSERT_YOUR_LIVE_DEPLOYED_URL]` *(e.g. `https://solarsync-production.up.railway.app` or `https://solarsync.onrender.com`)*
+- **GitHub Repository:** `https://github.com/blessedrishabh/solarsync`
+- **Live Deployed App:** `[INSERT_YOUR_LIVE_DEPLOYED_URL]` *(e.g. `http://<ec2-public-ip>:8000`)*
 - **Local Development URL:** `http://127.0.0.1:8000`
 
 ---
@@ -23,7 +23,7 @@
 
 ### Step 2: Clone / Navigate to Project Directory
 ```bash
-git clone [YOUR_GITHUB_REPO_URL] solarsync
+git clone https://github.com/blessedrishabh/solarsync.git
 cd solarsync
 ```
 
@@ -91,7 +91,7 @@ The application will be live at `http://localhost:8000` with automated container
    - Copy the async connection string: `postgresql+asyncpg://user:password@host:port/dbname`.
 
 2. **Web Service Deployment:**
-   - Link your public GitHub repository (`[YOUR_GITHUB_REPO_URL]`).
+   - Link your public GitHub repository (`https://github.com/blessedrishabh/solarsync`).
    - Set Build Command: `pip install -r requirements.txt` (or select Docker build).
    - Set Start Command: `uvicorn app.main:app --host 0.0.0.0 --port $PORT`.
 

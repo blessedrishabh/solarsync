@@ -1,8 +1,8 @@
 # Technical Design Document (TDD)
 ## Rooftop Solar Lead Qualification, Quotation Engine & Execution Tracker
 
-**Project Repository:** `[INSERT_YOUR_GITHUB_REPO_URL]` *(e.g. `https://github.com/<username>/solarsync`)*  
-**Live Deployed App:** `[INSERT_YOUR_LIVE_DEPLOYED_URL]` *(e.g. `https://solarsync-production.up.railway.app`)*  
+**Project Repository:** `https://github.com/blessedrishabh/solarsync`  
+**Live Deployed App:** `[INSERT_YOUR_LIVE_DEPLOYED_URL]` *(e.g. `http://<ec2-public-ip>:8000`)*  
 **Client:** Company A · Nagpur, Maharashtra (Vidarbha Regional Operations)  
 **Author:** Senior Full-Stack & AI Systems Architect  
 **Version:** 1.0.0 (Production Candidate)  

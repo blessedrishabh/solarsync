@@ -145,7 +145,7 @@ def build_pdf(filename="Technical_Design_Document.pdf"):
 
     # Meta table
     meta_data = [
-        [Paragraph("<b>Project Repository:</b>", table_cell), Paragraph("[INSERT_YOUR_GITHUB_REPO_URL]", table_cell),
+        [Paragraph("<b>Project Repository:</b>", table_cell), Paragraph("https://github.com/blessedrishabh/solarsync", table_cell),
          Paragraph("<b>Live App URL:</b>", table_cell), Paragraph("[INSERT_YOUR_LIVE_DEPLOYED_URL]", table_cell)],
         [Paragraph("<b>Client:</b>", table_cell), Paragraph("Company A · Nagpur, Maharashtra", table_cell),
          Paragraph("<b>Version:</b>", table_cell), Paragraph("1.0.0 (Production Release)", table_cell)],
