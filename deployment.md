@@ -9,7 +9,8 @@
 ## Evaluation Reference Links
 
 - **GitHub Repository:** `https://github.com/blessedrishabh/solarsync`
-- **Live Deployed App:** `[INSERT_YOUR_LIVE_DEPLOYED_URL]` *(e.g. `http://<ec2-public-ip>:8000`)*
+- **Live AWS Production App:** `http://13.236.232.232:8000`
+- **Live AWS Public DNS:** `http://ec2-13-236-232-232.ap-southeast-2.compute.amazonaws.com:8000`
 - **Local Development URL:** `http://127.0.0.1:8000`
 
 ---
@@ -133,25 +134,25 @@ SolarSync enforces strict Role-Based Access Control (**RBAC**) using secure HTTP
 
 ---
 
-## 5. Key Review & Evaluation URLs
+## 5. Key Review & Evaluation URLs (Live AWS Production & Local)
 
-### A. Core Operational Flows (Authenticated)
-1. **Sales & Admin Dashboard:** `http://127.0.0.1:8000/dashboard` *(or `/dashboard` on live deployment)*
-2. **Lead Capture with Bill Upload:** `http://127.0.0.1:8000/leads/new`
-3. **AI Bill Review & DPDP Verification:** `http://127.0.0.1:8000/leads/1/review`
-4. **Scored Leads Pipeline:** `http://127.0.0.1:8000/leads`
-5. **Dated Subsidy & Pricing Rules:** `http://127.0.0.1:8000/admin/rules`
-6. **Project Tracker Pipeline (Stuck Detection):** `http://127.0.0.1:8000/projects`
-7. **Staff Project Execution Detail:** `http://127.0.0.1:8000/projects/PRJ-30881`
+### A. Core Operational Flows (Authenticated — Credentials in Section 4)
+1. **Sales & Admin Dashboard:** `http://13.236.232.232:8000/dashboard` *(local: `http://127.0.0.1:8000/dashboard`)*
+2. **Lead Capture with Bill Upload:** `http://13.236.232.232:8000/leads/new`
+3. **AI Bill Review & DPDP Verification:** `http://13.236.232.232:8000/leads/1/review`
+4. **Scored Leads Pipeline:** `http://13.236.232.232:8000/leads`
+5. **Dated Subsidy & Pricing Rules:** `http://13.236.232.232:8000/admin/rules`
+6. **Project Tracker Pipeline (Stuck Detection):** `http://13.236.232.232:8000/projects`
+7. **Staff Project Execution Detail:** `http://13.236.232.232:8000/projects/PRJ-30881`
 
 ### B. Public Customer Touchpoints (Zero-Login / Token-Based)
 1. **Public Customer Milestone Tracker:**  
-   `http://127.0.0.1:8000/track/o94cYmOqweGo_3sYtmDji5Qii3BePVrO`  
+   `http://13.236.232.232:8000/track/o94cYmOqweGo_3sYtmDji5Qii3BePVrO`  
    *(Bilingual English & Marathi milestone tracker, real-time progress gauge, document download, and WhatsApp simulator modal)*
 2. **Stuck Project Demo Link (8 Days Idle):**  
-   `http://127.0.0.1:8000/track/demo-stuck-token-30940`
+   `http://13.236.232.232:8000/track/demo-stuck-token-30940`
 3. **Single-Page Quotation PDF Download:**  
-   `http://127.0.0.1:8000/quotes/QT-30881-2026/pdf`  
+   `http://13.236.232.232:8000/quotes/QT-30881-2026/pdf`  
    *(Mathematically verified, DPDP-compliant, pixel-perfect single-page ReportLab PDF)*
 
 ---

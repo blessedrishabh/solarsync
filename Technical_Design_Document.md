@@ -2,7 +2,7 @@
 ## Rooftop Solar Lead Qualification, Quotation Engine & Execution Tracker
 
 **Project Repository:** `https://github.com/blessedrishabh/solarsync`  
-**Live Deployed App:** `[INSERT_YOUR_LIVE_DEPLOYED_URL]` *(e.g. `http://<ec2-public-ip>:8000`)*  
+**Live Deployed App (AWS EC2):** `http://13.236.232.232:8000` *(Public DNS: `http://ec2-13-236-232-232.ap-southeast-2.compute.amazonaws.com:8000`)*  
 **Client:** Company A · Nagpur, Maharashtra (Vidarbha Regional Operations)  
 **Author:** Senior Full-Stack & AI Systems Architect  
 **Version:** 1.0.0 (Production Candidate)  
