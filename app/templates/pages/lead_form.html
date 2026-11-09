@@ -1,0 +1,355 @@
+{% extends "layouts/base.html" %}
+
+{% block content %}
+<div class="max-w-3xl mx-auto px-4 sm:px-6 py-8 sm:py-12">
+    <!-- Header -->
+    <div class="text-center mb-8">
+        <div class="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-solar-500 text-white mb-4 shadow-sm">
+            <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"/>
+            </svg>
+        </div>
+        <h1 class="text-3xl font-bold text-gray-900 tracking-tight">Rooftop Solar Eligibility & Quote</h1>
+        <p class="text-gray-500 mt-2 max-w-lg mx-auto text-sm sm:text-base">
+            Answer a few quick questions and upload your electricity bill. We'll instantly check your solar potential and calculate government subsidies.
+        </p>
+    </div>
+
+    <!-- Error Alert -->
+    {% if errors %}
+    <div class="mb-6 p-4 bg-red-50 border border-red-200 rounded-2xl">
+        <div class="flex items-start">
+            <svg class="w-5 h-5 text-red-500 mt-0.5 mr-2 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+            </svg>
+            <ul class="text-sm text-red-700 space-y-1">
+                {% for err in errors %}
+                <li>{{ err }}</li>
+                {% endfor %}
+            </ul>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Main Card -->
+    <div class="bg-white rounded-3xl shadow-sm border border-gray-100 p-6 sm:p-10">
+        <form method="POST" action="/leads/new" enctype="multipart/form-data" class="space-y-8" id="leadForm">
+            
+            <!-- Section 1: Contact Details -->
+            <div>
+                <div class="flex items-center space-x-2 pb-3 mb-5 border-b border-gray-100">
+                    <span class="w-6 h-6 rounded-full bg-solar-100 text-solar-800 text-xs font-bold flex items-center justify-center">1</span>
+                    <h2 class="text-base font-semibold text-gray-900">Contact Information</h2>
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div class="sm:col-span-2">
+                        <label for="name" class="block text-xs font-medium text-gray-700 uppercase tracking-wider mb-1.5">Full Name *</label>
+                        <input 
+                            type="text" 
+                            id="name" 
+                            name="name" 
+                            required 
+                            placeholder="e.g. Prashant Wankhede"
+                            value="{{ form_data.name if form_data else (user.name if user else '') }}"
+                            class="w-full px-4 py-3 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-solar-500 focus:border-solar-500 outline-none transition"
+                        >
+                    </div>
+
+                    <div>
+                        <label for="phone" class="block text-xs font-medium text-gray-700 uppercase tracking-wider mb-1.5">Mobile Number *</label>
+                        <div class="relative">
+                            <span class="absolute inset-y-0 left-0 flex items-center pl-4 text-gray-400 text-sm font-medium">+91</span>
+                            <input 
+                                type="tel" 
+                                id="phone" 
+                                name="phone" 
+                                required 
+                                pattern="[6-9][0-9]{9}" 
+                                maxlength="10"
+                                placeholder="9876543210"
+                                value="{{ form_data.phone if form_data else (user.phone if user else '') }}"
+                                class="w-full pl-14 pr-4 py-3 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-solar-500 focus:border-solar-500 outline-none transition"
+                            >
+                        </div>
+                    </div>
+
+                    <div>
+                        <label for="email" class="block text-xs font-medium text-gray-700 uppercase tracking-wider mb-1.5">Email (Optional)</label>
+                        <input 
+                            type="email" 
+                            id="email" 
+                            name="email" 
+                            placeholder="you@example.com"
+                            value="{{ form_data.email if form_data else (user.email if user else '') }}"
+                            class="w-full px-4 py-3 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-solar-500 focus:border-solar-500 outline-none transition"
+                        >
+                    </div>
+                </div>
+            </div>
+
+            <!-- Section 2: Property & Consumption -->
+            <div>
+                <div class="flex items-center space-x-2 pb-3 mb-5 border-b border-gray-100">
+                    <span class="w-6 h-6 rounded-full bg-solar-100 text-solar-800 text-xs font-bold flex items-center justify-center">2</span>
+                    <h2 class="text-base font-semibold text-gray-900">Property & Electricity Usage</h2>
+                </div>
+
+                <!-- Ownership selection cards -->
+                <div class="mb-5">
+                    <label class="block text-xs font-medium text-gray-700 uppercase tracking-wider mb-2">Do you own this property? *</label>
+                    <div class="grid grid-cols-2 gap-3">
+                        <label class="cursor-pointer">
+                            <input type="radio" name="ownership" value="owner" class="peer sr-only" {% if not form_data or form_data.ownership == 'owner' %}checked{% endif %}>
+                            <div class="p-4 rounded-2xl border-2 border-gray-200 peer-checked:border-solar-500 peer-checked:bg-solar-50/50 hover:bg-gray-50 transition text-center">
+                                <span class="text-2xl block mb-1">🏡</span>
+                                <span class="font-semibold text-gray-900 text-sm block">Property Owner</span>
+                                <span class="text-xs text-gray-500">I own the roof & house</span>
+                            </div>
+                        </label>
+                        <label class="cursor-pointer">
+                            <input type="radio" name="ownership" value="tenant" class="peer sr-only" {% if form_data and form_data.ownership == 'tenant' %}checked{% endif %}>
+                            <div class="p-4 rounded-2xl border-2 border-gray-200 peer-checked:border-solar-500 peer-checked:bg-solar-50/50 hover:bg-gray-50 transition text-center">
+                                <span class="text-2xl block mb-1">🏢</span>
+                                <span class="font-semibold text-gray-900 text-sm block">Tenant / Rented</span>
+                                <span class="text-xs text-gray-500">Requires owner consent</span>
+                            </div>
+                        </label>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <!-- Roof Type -->
+                    <div>
+                        <label for="roof_type" class="block text-xs font-medium text-gray-700 uppercase tracking-wider mb-1.5">Roof Construction *</label>
+                        <select 
+                            id="roof_type" 
+                            name="roof_type" 
+                            required
+                            class="w-full px-4 py-3 border border-gray-200 rounded-xl text-sm bg-white focus:ring-2 focus:ring-solar-500 focus:border-solar-500 outline-none transition"
+                        >
+                            <option value="concrete" {% if not form_data or form_data.roof_type == 'concrete' %}selected{% endif %}>Flat Concrete (RCC)</option>
+                            <option value="tin_shed" {% if form_data and form_data.roof_type == 'tin_shed' %}selected{% endif %}>Metal / Tin Shed</option>
+                            <option value="tiled" {% if form_data and form_data.roof_type == 'tiled' %}selected{% endif %}>Sloped / Mangalore Tiles</option>
+                            <option value="other" {% if form_data and form_data.roof_type == 'other' %}selected{% endif %}>Other Roof Type</option>
+                        </select>
+                    </div>
+
+                    <!-- Roof Area -->
+                    <div>
+                        <label for="roof_area_sqft" class="block text-xs font-medium text-gray-700 uppercase tracking-wider mb-1.5">Estimated Roof Area (sq. ft.) *</label>
+                        <input 
+                            type="number" 
+                            id="roof_area_sqft" 
+                            name="roof_area_sqft" 
+                            required 
+                            min="50" 
+                            step="10"
+                            placeholder="e.g. 500"
+                            value="{{ form_data.roof_area_sqft if form_data else '400' }}"
+                            class="w-full px-4 py-3 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-solar-500 focus:border-solar-500 outline-none transition"
+                        >
+                        <p class="text-xs text-gray-400 mt-1">Rule of thumb: 1 kW requires ~100 sq. ft.</p>
+                    </div>
+
+                    <!-- Monthly Bill -->
+                    <div>
+                        <label for="monthly_bill_rs" class="block text-xs font-medium text-gray-700 uppercase tracking-wider mb-1.5">Average Monthly Bill (₹) *</label>
+                        <div class="relative">
+                            <span class="absolute inset-y-0 left-0 flex items-center pl-4 text-gray-400 text-sm font-medium">₹</span>
+                            <input 
+                                type="number" 
+                                id="monthly_bill_rs" 
+                                name="monthly_bill_rs" 
+                                required 
+                                min="100" 
+                                step="50"
+                                placeholder="e.g. 3200"
+                                value="{{ form_data.monthly_bill_rs if form_data else '' }}"
+                                class="w-full pl-9 pr-4 py-3 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-solar-500 focus:border-solar-500 outline-none transition"
+                            >
+                        </div>
+                    </div>
+
+                    <!-- Pincode -->
+                    <div>
+                        <label for="pincode" class="block text-xs font-medium text-gray-700 uppercase tracking-wider mb-1.5">Area PIN Code *</label>
+                        <input 
+                            type="text" 
+                            id="pincode" 
+                            name="pincode" 
+                            required 
+                            pattern="[0-9]{6}" 
+                            maxlength="6"
+                            placeholder="e.g. 440010 (Nagpur)"
+                            value="{{ form_data.pincode if form_data else '' }}"
+                            class="w-full px-4 py-3 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-solar-500 focus:border-solar-500 outline-none transition"
+                        >
+                    </div>
+                </div>
+            </div>
+
+            <!-- Section 3: Electricity Bill Upload -->
+            <div>
+                <div class="flex items-center space-x-2 pb-3 mb-5 border-b border-gray-100">
+                    <span class="w-6 h-6 rounded-full bg-solar-100 text-solar-800 text-xs font-bold flex items-center justify-center">3</span>
+                    <h2 class="text-base font-semibold text-gray-900">Upload Electricity Bill Photo</h2>
+                </div>
+
+                <div class="border-2 border-dashed border-gray-200 hover:border-solar-400 rounded-2xl p-6 sm:p-8 text-center transition cursor-pointer bg-gray-50/50" id="dropArea">
+                    <input 
+                        type="file" 
+                        id="bill_file" 
+                        name="bill_file" 
+                        required 
+                        accept="image/jpeg,image/png,image/webp,application/pdf"
+                        class="hidden"
+                    >
+
+                    <!-- Empty State -->
+                    <div id="uploadPrompt" class="space-y-3">
+                        <div class="w-12 h-12 rounded-2xl bg-solar-100 text-solar-600 flex items-center justify-center mx-auto">
+                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+                            </svg>
+                        </div>
+                        <div>
+                            <p class="text-sm font-semibold text-gray-900">Tap to take photo or upload bill</p>
+                            <p class="text-xs text-gray-400 mt-1">Supports JPG, PNG, WEBP, or PDF (up to 10MB)</p>
+                        </div>
+                        <span class="inline-block px-3 py-1.5 bg-white border border-gray-200 rounded-lg text-xs font-medium text-gray-700 shadow-2xs">
+                            Choose File
+                        </span>
+                    </div>
+
+                    <!-- Selected Preview State -->
+                    <div id="uploadPreview" class="hidden space-y-3">
+                        <div class="w-16 h-16 rounded-xl bg-white shadow-xs border border-gray-200 overflow-hidden mx-auto flex items-center justify-center" id="thumbContainer">
+                            <img id="imagePreview" src="" alt="Bill preview" class="w-full h-full object-cover hidden">
+                            <svg id="pdfIcon" class="w-8 h-8 text-red-500 hidden" fill="currentColor" viewBox="0 0 20 20">
+                                <path fill-rule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4z" clip-rule="evenodd"/>
+                            </svg>
+                        </div>
+                        <div>
+                            <p id="fileName" class="text-sm font-medium text-gray-900 truncate max-w-xs mx-auto"></p>
+                            <p id="fileSize" class="text-xs text-gray-400"></p>
+                        </div>
+                        <button type="button" id="removeFileBtn" class="text-xs font-semibold text-red-600 hover:text-red-700">
+                            Change file
+                        </button>
+                    </div>
+                </div>
+
+                <div class="mt-3 flex items-center justify-between text-xs text-gray-400 px-1">
+                    <span class="flex items-center">
+                        <svg class="w-3.5 h-3.5 mr-1 text-green-500" fill="currentColor" viewBox="0 0 20 20">
+                            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
+                        </svg>
+                        DPDP Act 2023 Compliant · Data encrypted
+                    </span>
+                    <a href="/static/sample_msedcl_bill.pdf" download class="text-solar-600 hover:text-solar-700 font-medium underline flex items-center">
+                        <svg class="w-3.5 h-3.5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/>
+                        </svg>
+                        Download Sample Bill (to test)
+                    </a>
+                </div>
+            </div>
+
+            <!-- Submit Button -->
+            <div class="pt-4 border-t border-gray-100">
+                <button 
+                    type="submit" 
+                    id="submitBtn"
+                    class="w-full py-4 px-6 bg-solar-500 hover:bg-solar-600 active:bg-solar-700 text-white font-semibold rounded-2xl shadow-sm hover:shadow transition-all text-base flex items-center justify-center space-x-2"
+                >
+                    <span>Check Solar Eligibility & Get Quote</span>
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"/>
+                    </svg>
+                </button>
+                <p class="text-center text-xs text-gray-400 mt-3">
+                    Free estimate · No commitment · Onsite survey scheduled only if qualified
+                </p>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    const fileInput = document.getElementById('bill_file');
+    const dropArea = document.getElementById('dropArea');
+    const uploadPrompt = document.getElementById('uploadPrompt');
+    const uploadPreview = document.getElementById('uploadPreview');
+    const imagePreview = document.getElementById('imagePreview');
+    const pdfIcon = document.getElementById('pdfIcon');
+    const fileName = document.getElementById('fileName');
+    const fileSize = document.getElementById('fileSize');
+    const removeFileBtn = document.getElementById('removeFileBtn');
+
+    dropArea.addEventListener('click', (e) => {
+        if (e.target !== removeFileBtn) {
+            fileInput.click();
+        }
+    });
+
+    fileInput.addEventListener('change', handleFile);
+
+    // Drag & drop support
+    ['dragenter', 'dragover'].forEach(name => {
+        dropArea.addEventListener(name, (e) => {
+            e.preventDefault();
+            dropArea.classList.add('border-solar-500', 'bg-solar-50/20');
+        });
+    });
+
+    ['dragleave', 'drop'].forEach(name => {
+        dropArea.addEventListener(name, (e) => {
+            e.preventDefault();
+            dropArea.classList.remove('border-solar-500', 'bg-solar-50/20');
+        });
+    });
+
+    dropArea.addEventListener('drop', (e) => {
+        const dt = e.dataTransfer;
+        if (dt.files && dt.files.length > 0) {
+            fileInput.files = dt.files;
+            handleFile();
+        }
+    });
+
+    function handleFile() {
+        const file = fileInput.files[0];
+        if (!file) return;
+
+        fileName.textContent = file.name;
+        fileSize.textContent = (file.size / (1024 * 1024)).toFixed(2) + ' MB';
+
+        uploadPrompt.classList.add('hidden');
+        uploadPreview.classList.remove('hidden');
+
+        if (file.type.startsWith('image/')) {
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                imagePreview.src = e.target.result;
+                imagePreview.classList.remove('hidden');
+                pdfIcon.classList.add('hidden');
+            };
+            reader.readAsDataURL(file);
+        } else {
+            imagePreview.classList.add('hidden');
+            pdfIcon.classList.remove('hidden');
+        }
+    }
+
+    removeFileBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        fileInput.value = '';
+        uploadPreview.classList.add('hidden');
+        uploadPrompt.classList.remove('hidden');
+        imagePreview.src = '';
+    });
+</script>
+{% endblock %}
