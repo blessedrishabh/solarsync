@@ -1,0 +1,383 @@
+{% extends "layouts/base.html" %}
+
+{% block nav %}
+<nav class="bg-white border-b border-gray-100">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="flex items-center justify-between h-16">
+            <div class="flex items-center space-x-3">
+                <a href="/dashboard" class="flex items-center space-x-3">
+                    <div class="w-9 h-9 rounded-xl bg-solar-500 flex items-center justify-center">
+                        <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"/>
+                        </svg>
+                    </div>
+                    <span class="text-lg font-semibold text-gray-900">SolarSync</span>
+                </a>
+            </div>
+
+            <div class="flex items-center space-x-4">
+                <a href="/leads/{{ lead.lead_id }}" class="text-xs font-semibold text-gray-500 hover:text-gray-900 flex items-center">
+                    <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/>
+                    </svg>
+                    Back to Lead Overview
+                </a>
+            </div>
+        </div>
+    </div>
+</nav>
+{% endblock %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+    
+    <!-- Top Header -->
+    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6 pb-4 border-b border-gray-100">
+        <div>
+            <div class="flex items-center space-x-3">
+                <span class="font-mono text-xs font-bold text-solar-800 bg-solar-100 px-2.5 py-1 rounded-lg">
+                    {{ lead.lead_id }}
+                </span>
+                <h1 class="text-xl sm:text-2xl font-bold text-gray-900">AI Bill Reading & Verification</h1>
+            </div>
+            <p class="text-xs text-gray-400 mt-1">
+                Applicant: <strong class="text-gray-700">{{ lead.name }}</strong> (+91 {{ lead.phone }}) · {{ lead.ownership.value | capitalize }} · PIN {{ lead.pincode }}
+            </p>
+        </div>
+
+        <div class="flex items-center space-x-3">
+            {% if reading and reading.is_confirmed %}
+            <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-green-100 text-green-800">
+                <svg class="w-3.5 h-3.5 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                    <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/>
+                </svg>
+                Human Confirmed
+            </span>
+            {% else %}
+            <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-solar-100 text-solar-800">
+                ⚡ AI Extracted · Needs Staff Confirmation
+            </span>
+            {% endif %}
+
+            <form method="POST" action="/leads/{{ lead.lead_id }}/reanalyze">
+                <button type="submit" class="px-3 py-1.5 border border-gray-200 text-xs font-medium text-gray-600 rounded-xl hover:bg-gray-50 transition" title="Re-run Gemini Vision OCR">
+                    ↻ Re-run AI
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Quality Issues Banner (if any) -->
+    {% if reading and (reading.needs_reupload or reading.photo_quality != 'good') %}
+    <div class="mb-6 p-4 bg-amber-50 border border-amber-200 rounded-2xl flex items-start justify-between gap-4">
+        <div class="flex items-start space-x-3">
+            <span class="text-xl">⚠️</span>
+            <div>
+                <h2 class="text-sm font-bold text-amber-900">Photo Quality Notice ({{ reading.photo_quality | title }})</h2>
+                <p class="text-xs text-amber-800 mt-0.5">
+                    {{ reading.quality_issues or "The uploaded bill document is partially blurred or cut off. Please review and verify values manually." }}
+                </p>
+            </div>
+        </div>
+        <button type="button" onclick="document.getElementById('reuploadModal').classList.remove('hidden')" class="px-3 py-1.5 bg-amber-600 hover:bg-amber-700 text-white text-xs font-semibold rounded-xl flex-shrink-0 transition">
+            Request Re-upload
+        </button>
+    </div>
+    {% endif %}
+
+    <!-- 2-Column Side-by-Side Interface -->
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+        
+        <!-- LEFT: Electricity Bill Viewer -->
+        <div class="lg:col-span-6 bg-white rounded-3xl border border-gray-100 p-4 shadow-2xs">
+            <div class="flex items-center justify-between pb-3 mb-3 border-b border-gray-100">
+                <span class="text-xs font-semibold text-gray-500 uppercase tracking-wider flex items-center">
+                    <svg class="w-4 h-4 mr-1.5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
+                    </svg>
+                    Original Electricity Bill
+                </span>
+                
+                <div class="flex items-center space-x-1.5">
+                    <button type="button" onclick="zoomIn()" class="p-1.5 rounded-lg border border-gray-200 text-gray-600 hover:bg-gray-50 text-xs" title="Zoom In">+</button>
+                    <button type="button" onclick="zoomOut()" class="p-1.5 rounded-lg border border-gray-200 text-gray-600 hover:bg-gray-50 text-xs" title="Zoom Out">-</button>
+                    <button type="button" onclick="resetZoom()" class="p-1.5 rounded-lg border border-gray-200 text-gray-600 hover:bg-gray-50 text-xs" title="Reset Zoom">Reset</button>
+                    <a href="/{{ lead.bill_photo_path }}" target="_blank" class="p-1.5 rounded-lg border border-gray-200 text-gray-600 hover:bg-gray-50 text-xs" title="Open full screen in new tab">
+                        ↗
+                    </a>
+                </div>
+            </div>
+
+            <!-- Image / Document Viewport -->
+            <div class="overflow-auto border border-gray-200 rounded-2xl bg-gray-50 h-[560px] flex items-center justify-center p-2 relative" id="billViewport">
+                {% if lead.bill_photo_path.endswith('.pdf') %}
+                <iframe src="/{{ lead.bill_photo_path }}" class="w-full h-full rounded-xl" id="pdfFrame"></iframe>
+                {% else %}
+                <img 
+                    src="/{{ lead.bill_photo_path }}" 
+                    id="billImage" 
+                    alt="Electricity Bill" 
+                    class="max-w-full max-h-full object-contain transition-transform duration-200 origin-center"
+                    onerror="this.onerror=null; this.src='https://placehold.co/600x850?text=MSEDCL+Bill+Image';"
+                >
+                {% endif %}
+            </div>
+
+            <div class="mt-2 text-center">
+                <p class="text-xs text-gray-400">
+                    Use mouse wheel or zoom buttons to inspect small meter readings and sanctioned load figures.
+                </p>
+            </div>
+        </div>
+
+        <!-- RIGHT: Side-by-Side Extracted Values Form -->
+        <div class="lg:col-span-6 space-y-4">
+            
+            <form method="POST" action="/leads/{{ lead.lead_id }}/confirm-review" class="bg-white rounded-3xl border border-gray-100 p-6 shadow-2xs space-y-5">
+                
+                <div class="flex items-center justify-between pb-3 border-b border-gray-100">
+                    <div>
+                        <h2 class="text-sm font-bold text-gray-900">Extracted Values & Sizing</h2>
+                        <p class="text-xs text-gray-400">Values read by Gemini Vision. Edit if OCR misread.</p>
+                    </div>
+                    {% if reading and reading.ai_confidence %}
+                    <span class="text-xs font-semibold text-green-700 bg-green-50 border border-green-200 px-2.5 py-1 rounded-full">
+                        {{ (reading.ai_confidence * 100) | round | int }}% Confidence
+                    </span>
+                    {% endif %}
+                </div>
+
+                <!-- Consumer Number & Name -->
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                        <label for="consumer_number" class="block text-xs font-medium text-gray-700 mb-1 flex items-center justify-between">
+                            <span>Consumer Number *</span>
+                            <span class="text-[10px] text-green-600 bg-green-50 px-1.5 py-0.5 rounded">DPDP Protected</span>
+                        </label>
+                        <input 
+                            type="text" 
+                            id="consumer_number" 
+                            name="consumer_number" 
+                            value="{{ reading.consumer_number if reading and reading.consumer_number else '' }}"
+                            placeholder="e.g. 041029384756"
+                            class="w-full px-3.5 py-2.5 border border-gray-200 rounded-xl text-sm font-mono focus:ring-2 focus:ring-solar-500 outline-none"
+                        >
+                    </div>
+
+                    <div>
+                        <label for="consumer_name" class="block text-xs font-medium text-gray-700 mb-1">Consumer Name on Bill</label>
+                        <input 
+                            type="text" 
+                            id="consumer_name" 
+                            name="consumer_name" 
+                            value="{{ reading.consumer_name if reading and reading.consumer_name else lead.name }}"
+                            class="w-full px-3.5 py-2.5 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-solar-500 outline-none"
+                        >
+                    </div>
+                </div>
+
+                <!-- Tariff & Sanctioned Load -->
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                        <label for="tariff_category" class="block text-xs font-medium text-gray-700 mb-1">Tariff Category</label>
+                        <input 
+                            type="text" 
+                            id="tariff_category" 
+                            name="tariff_category" 
+                            value="{{ reading.tariff_category if reading and reading.tariff_category else 'LT-I Residential' }}"
+                            class="w-full px-3.5 py-2.5 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-solar-500 outline-none"
+                        >
+                    </div>
+
+                    <div>
+                        <label for="sanctioned_load_kw" class="block text-xs font-medium text-gray-700 mb-1">Sanctioned Load (kW) *</label>
+                        <input 
+                            type="number" 
+                            step="0.1" 
+                            id="sanctioned_load_kw" 
+                            name="sanctioned_load_kw" 
+                            value="{{ reading.sanctioned_load_kw if reading and reading.sanctioned_load_kw else '4.0' }}"
+                            class="w-full px-3.5 py-2.5 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-solar-500 outline-none"
+                        >
+                    </div>
+                </div>
+
+                <!-- Monthly Units & Bill Amount -->
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                        <label for="monthly_units" class="block text-xs font-medium text-gray-700 mb-1">Average Monthly Units (kWh) *</label>
+                        <input 
+                            type="number" 
+                            id="monthly_units" 
+                            name="monthly_units" 
+                            value="{{ reading.monthly_units if reading and reading.monthly_units else '340' }}"
+                            oninput="recalculateSizing()"
+                            class="w-full px-3.5 py-2.5 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-solar-500 outline-none"
+                        >
+                    </div>
+
+                    <div>
+                        <label for="bill_amount_rs" class="block text-xs font-medium text-gray-700 mb-1">Billed Amount (₹)</label>
+                        <input 
+                            type="number" 
+                            step="10" 
+                            id="bill_amount_rs" 
+                            name="bill_amount_rs" 
+                            value="{{ reading.bill_amount_rs if reading and reading.bill_amount_rs else lead.monthly_bill_rs }}"
+                            class="w-full px-3.5 py-2.5 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-solar-500 outline-none"
+                        >
+                    </div>
+                </div>
+
+                <!-- Sizing & Score Card (Live Reactive) -->
+                <div class="bg-solar-50/60 rounded-2xl border border-solar-100 p-4 space-y-3">
+                    <div class="flex items-center justify-between">
+                        <span class="text-xs font-bold uppercase tracking-wider text-solar-900">Recommended Sizing & Lead Priority</span>
+                        <span class="text-[11px] text-gray-400">1,400 kWh/kW/yr formula</span>
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-3">
+                        <div class="bg-white rounded-xl p-3 border border-solar-100">
+                            <label for="recommended_kw" class="block text-[11px] text-gray-500">Recommended Size</label>
+                            <div class="flex items-baseline space-x-1 mt-0.5">
+                                <input 
+                                    type="number" 
+                                    step="0.5" 
+                                    min="1" 
+                                    id="recommended_kw" 
+                                    name="recommended_kw" 
+                                    value="{{ lead.recommended_kw if lead.recommended_kw else '3.0' }}"
+                                    class="w-16 font-bold text-xl text-gray-900 bg-transparent outline-none border-b border-solar-400"
+                                >
+                                <span class="text-xs font-medium text-gray-500">kW</span>
+                            </div>
+                        </div>
+
+                        <div class="bg-white rounded-xl p-3 border border-solar-100">
+                            <label for="score" class="block text-[11px] text-gray-500">Qualification Score</label>
+                            <select 
+                                id="score" 
+                                name="score"
+                                class="mt-0.5 text-sm font-bold bg-transparent outline-none w-full cursor-pointer {% if lead.score.value == 'high' %}text-green-700{% elif lead.score.value == 'medium' %}text-amber-700{% else %}text-gray-700{% endif %}"
+                            >
+                                <option value="high" {% if lead.score.value == 'high' %}selected{% endif %}>⭐ High (Survey Visit)</option>
+                                <option value="medium" {% if lead.score.value == 'medium' %}selected{% endif %}>🟡 Medium (Phone Call)</option>
+                                <option value="low" {% if lead.score.value == 'low' %}selected{% endif %}>⚪ Low (Short Call Only)</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div>
+                        <label for="score_reason" class="block text-[11px] text-gray-500 mb-1">Reason / Action Rule</label>
+                        <textarea 
+                            id="score_reason" 
+                            name="score_reason" 
+                            rows="2"
+                            class="w-full px-3 py-1.5 text-xs bg-white border border-solar-100 rounded-lg outline-none"
+                        >{{ lead.score_reason or '' }}</textarea>
+                    </div>
+                </div>
+
+                <!-- Submit & Approve Buttons -->
+                <div class="pt-2 flex flex-col sm:flex-row gap-3">
+                    <button 
+                        type="submit" 
+                        class="flex-1 py-3 px-5 bg-solar-500 hover:bg-solar-600 active:bg-solar-700 text-white font-semibold text-sm rounded-xl shadow-xs transition flex items-center justify-center space-x-1.5"
+                    >
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+                        </svg>
+                        <span>Confirm & Update Lead</span>
+                    </button>
+                    
+                    <a href="/leads/{{ lead.lead_id }}" class="py-3 px-4 border border-gray-200 text-gray-700 font-medium text-xs rounded-xl hover:bg-gray-50 transition text-center">
+                        Cancel
+                    </a>
+                </div>
+
+            </form>
+
+        </div>
+
+    </div>
+</div>
+
+<!-- Modal: Request Re-upload -->
+<div id="reuploadModal" class="hidden fixed inset-0 bg-black/40 backdrop-blur-xs flex items-center justify-center p-4 z-50">
+    <div class="bg-white rounded-3xl max-w-md w-full p-6 shadow-xl border border-gray-100 space-y-4">
+        <div class="flex items-center justify-between">
+            <h3 class="font-bold text-gray-900 text-base">Request Bill Photo Re-upload</h3>
+            <button type="button" onclick="document.getElementById('reuploadModal').classList.add('hidden')" class="text-gray-400 hover:text-gray-600">✕</button>
+        </div>
+        <p class="text-xs text-gray-500">
+            Send an SMS / WhatsApp alert to {{ lead.name }} requesting a clearer photo of their electricity bill. Per Company A policy, this replaces an on-site visit with a short call.
+        </p>
+        <form method="POST" action="/leads/{{ lead.lead_id }}/request-reupload" class="space-y-3">
+            <div>
+                <label for="reason" class="block text-xs font-medium text-gray-700 mb-1">Reason for Re-upload</label>
+                <select id="reason" name="reason" class="w-full px-3 py-2 border border-gray-200 rounded-xl text-xs bg-white outline-none">
+                    <option value="Consumer number and units are blurry/unreadable">Consumer number and units are blurry/unreadable</option>
+                    <option value="Photo is cut off, sanctioned load is missing">Photo is cut off, sanctioned load is missing</option>
+                    <option value="Image is too dark or has heavy glare">Image is too dark or has heavy glare</option>
+                    <option value="Uploaded file is not a valid electricity bill">Uploaded file is not a valid electricity bill</option>
+                </select>
+            </div>
+            <div class="flex justify-end space-x-2 pt-2">
+                <button type="button" onclick="document.getElementById('reuploadModal').classList.add('hidden')" class="px-4 py-2 text-xs font-semibold text-gray-600 hover:bg-gray-50 rounded-xl">Cancel</button>
+                <button type="submit" class="px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white text-xs font-semibold rounded-xl">Flag for Re-upload</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+    let zoomLevel = 1.0;
+    const billImg = document.getElementById('billImage');
+
+    function zoomIn() {
+        if (!billImg) return;
+        zoomLevel = Math.min(zoomLevel + 0.25, 3.0);
+        billImg.style.transform = `scale(${zoomLevel})`;
+    }
+
+    function zoomOut() {
+        if (!billImg) return;
+        zoomLevel = Math.max(zoomLevel - 0.25, 0.5);
+        billImg.style.transform = `scale(${zoomLevel})`;
+    }
+
+    function resetZoom() {
+        if (!billImg) return;
+        zoomLevel = 1.0;
+        billImg.style.transform = `scale(1.0)`;
+    }
+
+    function recalculateSizing() {
+        const units = parseInt(document.getElementById('monthly_units').value) || 0;
+        const ownership = "{{ lead.ownership.value }}";
+        const recInput = document.getElementById('recommended_kw');
+        const scoreSelect = document.getElementById('score');
+
+        if (ownership === 'tenant') {
+            scoreSelect.value = 'low';
+            return;
+        }
+
+        if (units < 100) {
+            scoreSelect.value = 'low';
+            recInput.value = 1.0;
+        } else if (units >= 250) {
+            scoreSelect.value = 'high';
+            // 1 kW ~ 116 units/month
+            recInput.value = Math.max(1, Math.round(units / 116));
+        } else {
+            scoreSelect.value = 'medium';
+            recInput.value = Math.max(1, Math.round(units / 116));
+        }
+    }
+</script>
+{% endblock %}
