@@ -1,0 +1,314 @@
+{% extends "layouts/base.html" %}
+
+{% block nav %}
+<nav class="bg-white border-b border-gray-100">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="flex items-center justify-between h-16">
+            <!-- Brand -->
+            <div class="flex items-center space-x-3">
+                <a href="/dashboard" class="flex items-center space-x-3">
+                    <div class="w-9 h-9 rounded-xl bg-solar-500 flex items-center justify-center">
+                        <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"/>
+                        </svg>
+                    </div>
+                    <span class="text-lg font-semibold text-gray-900">SolarSync</span>
+                </a>
+            </div>
+
+            <!-- Navigation Links -->
+            <div class="hidden md:flex items-center space-x-1">
+                <a href="/dashboard" class="px-3 py-2 rounded-lg text-sm font-medium text-solar-600 bg-solar-50">
+                    Dashboard
+                </a>
+                {% if user.role.value in ['sales', 'admin'] %}
+                <a href="/leads" class="px-3 py-2 rounded-lg text-sm font-medium text-gray-600 hover:text-gray-900 hover:bg-gray-50">
+                    Leads Pipeline
+                </a>
+                <a href="/quotes" class="px-3 py-2 rounded-lg text-sm font-medium text-gray-600 hover:text-gray-900 hover:bg-gray-50">
+                    Quotes
+                </a>
+                <a href="/projects" class="px-3 py-2 rounded-lg text-sm font-medium text-gray-600 hover:text-gray-900 hover:bg-gray-50">
+                    Projects
+                </a>
+                {% endif %}
+                {% if user.role.value == 'admin' %}
+                <a href="/admin/rules" class="px-3 py-2 rounded-lg text-sm font-medium text-gray-600 hover:text-gray-900 hover:bg-gray-50">
+                    Dated Rules
+                </a>
+                {% endif %}
+                <a href="/leads/new" class="px-3 py-2 rounded-lg text-sm font-medium text-solar-700 hover:bg-solar-50">
+                    + New Lead Form
+                </a>
+            </div>
+
+            <!-- User Menu -->
+            <div class="flex items-center space-x-4">
+                <div class="text-right hidden sm:block">
+                    <p class="text-sm font-medium text-gray-900">{{ user.name }}</p>
+                    <p class="text-xs text-gray-500 capitalize">{{ user.role.value }}</p>
+                </div>
+                <div class="w-9 h-9 rounded-full bg-solar-100 text-solar-700 flex items-center justify-center text-sm font-semibold">
+                    {{ user.name[0] | upper }}
+                </div>
+                <a href="/auth/logout" class="text-gray-400 hover:text-gray-600 transition" title="Logout">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/>
+                    </svg>
+                </a>
+            </div>
+        </div>
+    </div>
+</nav>
+{% endblock %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <!-- Welcome Header -->
+    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8">
+        <div>
+            <h1 class="text-2xl font-bold text-gray-900">Welcome back, {{ user.name.split(' ')[0] }}</h1>
+            <p class="text-gray-500 mt-1">Vidarbha solar operations overview and lead qualification pipeline.</p>
+        </div>
+        <div>
+            <a href="/leads/new" class="inline-flex items-center px-4 py-2.5 bg-solar-500 hover:bg-solar-600 text-white text-sm font-semibold rounded-xl shadow-2xs transition">
+                <svg class="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+                </svg>
+                Submit New Lead
+            </a>
+        </div>
+    </div>
+
+    {% if user.role.value in ['sales', 'admin'] %}
+    <!-- Company A Executive KPI & Financial Impact Widget -->
+    <div class="bg-gradient-to-r from-emerald-50 via-teal-50 to-green-50 border border-emerald-200 rounded-3xl p-6 mb-8 shadow-2xs">
+        <div class="flex flex-col md:flex-row md:items-center justify-between gap-6">
+            <div>
+                <span class="text-xs font-bold uppercase tracking-wider text-emerald-800 bg-emerald-100 px-3 py-1 rounded-full">
+                    Financial Impact & Survey Waste Reduction
+                </span>
+                <h2 class="text-xl font-bold text-gray-900 mt-2">
+                    ₹{{ "{:,}".format(survey_cost_saved) }} in Unproductive Survey Costs Eliminated
+                </h2>
+                <p class="text-xs sm:text-sm text-gray-600 mt-1 max-w-2xl">
+                    By filtering out non-viable applicants (tenants &amp; &lt;₹800 bills) via AI bill verification, Company A saves ₹2,500 per survey visit.
+                </p>
+            </div>
+
+            <div class="flex items-center space-x-4 border-t md:border-t-0 md:border-l border-emerald-200 pt-4 md:pt-0 md:pl-6 flex-shrink-0">
+                <div>
+                    <p class="text-xs text-gray-500">Unqualified Lead %</p>
+                    <p class="text-2xl font-bold text-gray-900">{{ unqualified_pct }}%</p>
+                    <p class="text-[10px] text-emerald-700">Target: &lt; 15%</p>
+                </div>
+                <div>
+                    <p class="text-xs text-gray-500">Booked Surveys</p>
+                    <p class="text-2xl font-bold text-emerald-700">{{ surveys_scheduled }}</p>
+                    <p class="text-[10px] text-gray-500">High ROI Only</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Sales / Admin Stat Cards -->
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+        <!-- Total Leads -->
+        <div class="bg-white rounded-2xl border border-gray-100 p-6 shadow-2xs">
+            <div class="flex items-center justify-between mb-4">
+                <div class="w-10 h-10 rounded-xl bg-blue-50 flex items-center justify-center">
+                    <svg class="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/>
+                    </svg>
+                </div>
+                <a href="/leads" class="text-xs font-semibold text-solar-600 hover:underline">View all</a>
+            </div>
+            <p class="text-3xl font-bold text-gray-900">{{ total_leads }}</p>
+            <p class="text-xs text-gray-500 mt-1">Total Solar Inquiries</p>
+        </div>
+
+        <!-- High Priority (Ready for survey) -->
+        <div class="bg-white rounded-2xl border border-gray-100 p-6 shadow-2xs">
+            <div class="flex items-center justify-between mb-4">
+                <div class="w-10 h-10 rounded-xl bg-green-50 flex items-center justify-center">
+                    <svg class="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                    </svg>
+                </div>
+                <span class="text-xs font-semibold text-green-700 bg-green-50 px-2 py-0.5 rounded-full">Survey Worthy</span>
+            </div>
+            <p class="text-3xl font-bold text-green-700">{{ high_score_leads }}</p>
+            <p class="text-xs text-gray-500 mt-1">High Conversion Probability</p>
+        </div>
+
+        <!-- Medium Score (Call First) -->
+        <div class="bg-white rounded-2xl border border-gray-100 p-6 shadow-2xs">
+            <div class="flex items-center justify-between mb-4">
+                <div class="w-10 h-10 rounded-xl bg-amber-50 flex items-center justify-center">
+                    <svg class="w-5 h-5 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"/>
+                    </svg>
+                </div>
+                <span class="text-xs font-semibold text-amber-700 bg-amber-50 px-2 py-0.5 rounded-full">Phone First</span>
+            </div>
+            <p class="text-3xl font-bold text-amber-600">{{ med_score_leads }}</p>
+            <p class="text-xs text-gray-500 mt-1">Phone Screening Required</p>
+        </div>
+
+        <!-- Low Score (Tenant / Small Bill) -->
+        <div class="bg-white rounded-2xl border border-gray-100 p-6 shadow-2xs">
+            <div class="flex items-center justify-between mb-4">
+                <div class="w-10 h-10 rounded-xl bg-gray-100 flex items-center justify-center">
+                    <svg class="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636"/>
+                    </svg>
+                </div>
+                <span class="text-xs font-semibold text-gray-600 bg-gray-100 px-2 py-0.5 rounded-full">Saved ₹2.5k Visit</span>
+            </div>
+            <p class="text-3xl font-bold text-gray-600">{{ low_score_leads }}</p>
+            <p class="text-xs text-gray-500 mt-1">Replaced with Short Call</p>
+        </div>
+    </div>
+
+    <!-- Recent Leads Table -->
+    <div class="bg-white rounded-2xl shadow-2xs border border-gray-100 overflow-hidden">
+        <div class="px-6 py-4 border-b border-gray-100 flex items-center justify-between">
+            <h2 class="text-base font-semibold text-gray-900">Recent Applications</h2>
+            <a href="/leads" class="text-xs font-semibold text-solar-600 hover:text-solar-800">
+                View All Leads →
+            </a>
+        </div>
+
+        {% if recent_leads %}
+        <div class="overflow-x-auto">
+            <table class="min-w-full divide-y divide-gray-100">
+                <thead class="bg-gray-50/70">
+                    <tr>
+                        <th class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase">Lead ID</th>
+                        <th class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase">Applicant</th>
+                        <th class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase">Monthly Bill</th>
+                        <th class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase">Qualification</th>
+                        <th class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase">System Sizing</th>
+                        <th class="px-6 py-3 text-right text-xs font-semibold text-gray-500 uppercase">Action</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-gray-100 bg-white">
+                    {% for lead in recent_leads %}
+                    <tr class="hover:bg-gray-50/60 transition">
+                        <td class="px-6 py-3.5 whitespace-nowrap">
+                            <span class="font-mono text-xs font-semibold text-solar-700 bg-solar-50 px-2.5 py-1 rounded-lg">
+                                {{ lead.lead_id }}
+                            </span>
+                        </td>
+                        <td class="px-6 py-3.5 whitespace-nowrap">
+                            <div class="font-medium text-gray-900 text-sm">{{ lead.name }}</div>
+                            <div class="text-xs text-gray-400">+91 {{ lead.phone }}</div>
+                        </td>
+                        <td class="px-6 py-3.5 whitespace-nowrap text-sm font-semibold text-gray-900">
+                            ₹{{ "{:,}".format(lead.monthly_bill_rs) }}
+                        </td>
+                        <td class="px-6 py-3.5 whitespace-nowrap">
+                            {% if lead.score.value == 'high' %}
+                            <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-green-50 text-green-700">
+                                ⭐ High Score
+                            </span>
+                            {% elif lead.score.value == 'medium' %}
+                            <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-amber-50 text-amber-700">
+                                🟡 Medium
+                            </span>
+                            {% elif lead.score.value == 'low' %}
+                            <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-gray-100 text-gray-600">
+                                ⚪ Low
+                            </span>
+                            {% endif %}
+                        </td>
+                        <td class="px-6 py-3.5 whitespace-nowrap text-sm text-gray-700">
+                            {% if lead.recommended_kw %}
+                            <span class="font-semibold text-gray-900">{{ lead.recommended_kw }}</span> kW
+                            {% else %}
+                            <span class="text-gray-400">—</span>
+                            {% endif %}
+                        </td>
+                        <td class="px-6 py-3.5 whitespace-nowrap text-right text-xs">
+                            <a href="/leads/{{ lead.lead_id }}" class="text-solar-600 hover:text-solar-800 font-semibold">
+                                View →
+                            </a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="text-center py-12">
+            <p class="text-gray-400 text-sm">No applications submitted yet.</p>
+        </div>
+        {% endif %}
+    </div>
+    {% endif %}
+
+    {% if user.role.value == 'homeowner' %}
+    <!-- Homeowner Dashboard View -->
+    <div class="space-y-6">
+        <!-- CTA Banner -->
+        <div class="bg-gradient-to-r from-solar-50 via-amber-50 to-orange-50 rounded-3xl border border-solar-100 p-8 shadow-2xs">
+            <div class="max-w-xl">
+                <span class="text-xs font-bold uppercase tracking-wider text-solar-700 bg-solar-100 px-3 py-1 rounded-full">
+                    PM Surya Ghar Muft Bijli Yojana
+                </span>
+                <h2 class="text-2xl font-bold text-gray-900 mt-3">Get up to ₹78,000 Central Subsidy</h2>
+                <p class="text-sm text-gray-600 mt-2">
+                    Submit your electricity bill to find out your rooftop capacity, estimated monthly savings, and payback period.
+                </p>
+                <div class="mt-6 flex flex-wrap gap-3">
+                    <a href="/leads/new" class="px-6 py-3 bg-solar-500 hover:bg-solar-600 text-white font-semibold text-sm rounded-xl shadow-xs transition">
+                        Submit Rooftop Solar Inquiry
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- My Applications -->
+        <div class="bg-white rounded-3xl border border-gray-100 p-6 shadow-2xs">
+            <h3 class="text-base font-semibold text-gray-900 mb-4">My Submitted Inquiries</h3>
+            
+            {% if user_leads %}
+            <div class="space-y-3">
+                {% for lead in user_leads %}
+                <div class="p-4 rounded-2xl border border-gray-100 bg-gray-50/50 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                    <div>
+                        <div class="flex items-center space-x-2">
+                            <span class="font-mono text-xs font-bold text-solar-800 bg-solar-100 px-2 py-0.5 rounded">
+                                {{ lead.lead_id }}
+                            </span>
+                            <span class="text-sm font-semibold text-gray-900">
+                                {{ lead.roof_type.value | replace('_', ' ') | title }} · {{ lead.roof_area_sqft }} sq. ft.
+                            </span>
+                        </div>
+                        <p class="text-xs text-gray-400 mt-1">
+                            Monthly Bill: ₹{{ "{:,}".format(lead.monthly_bill_rs) }} · PIN: {{ lead.pincode }}
+                        </p>
+                    </div>
+
+                    <div class="flex items-center space-x-3">
+                        <span class="px-3 py-1 bg-white border border-gray-200 rounded-lg text-xs font-medium text-gray-700 capitalize">
+                            {{ lead.status.value | replace('_', ' ') }}
+                        </span>
+                        <a href="/leads/success/{{ lead.lead_id }}" class="text-xs font-semibold text-solar-600 hover:underline">
+                            View Status
+                        </a>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <div class="text-center py-8 text-gray-400 text-sm">
+                You haven't submitted any rooftop solar inquiries yet. Click above to start!
+            </div>
+            {% endif %}
+        </div>
+    </div>
+    {% endif %}
+
+</div>
+{% endblock %}

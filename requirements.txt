@@ -1,0 +1,35 @@
+# FastAPI & Server
+fastapi
+uvicorn[standard]
+python-multipart
+
+# Templates
+jinja2
+
+# Database
+sqlalchemy[asyncio]
+greenlet
+alembic
+asyncpg
+
+# Auth & Security
+bcrypt
+python-jose[cryptography]
+
+# Validation & Settings
+pydantic
+email-validator
+pydantic-settings
+
+# AI & Orchestration
+google-genai
+langgraph
+pillow
+
+# PDF Generation
+reportlab
+
+# Dev & Testing
+pytest
+pytest-asyncio
+httpx
