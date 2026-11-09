@@ -146,14 +146,13 @@ SolarSync enforces strict Role-Based Access Control (**RBAC**) using secure HTTP
 7. **Staff Project Execution Detail:** `http://13.236.232.232:8000/projects/PRJ-30881`
 
 ### B. Public Customer Touchpoints (Zero-Login / Token-Based)
-1. **Public Customer Milestone Tracker:**  
-   `http://13.236.232.232:8000/track/o94cYmOqweGo_3sYtmDji5Qii3BePVrO`  
+1. **Public Customer Milestone Tracker (Prashant Wankhede - Active):**  
+   `http://13.236.232.232:8000/track/demo-prashant-token-30881`  
    *(Bilingual English & Marathi milestone tracker, real-time progress gauge, document download, and WhatsApp simulator modal)*
 2. **Stuck Project Demo Link (8 Days Idle):**  
    `http://13.236.232.232:8000/track/demo-stuck-token-30940`
-3. **Single-Page Quotation PDF Download:**  
-   `http://13.236.232.232:8000/quotes/QT-30881-2026/pdf`  
-   *(Mathematically verified, DPDP-compliant, pixel-perfect single-page ReportLab PDF)*
+3. **Completed Project Demo Link (Subsidy Credited):**  
+   `http://13.236.232.232:8000/track/demo-complete-token-30799`
 
 ---
 
